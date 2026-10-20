@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>한국교통대학교 캠퍼스 라이프</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="캠퍼스 지도부터 맛집, 숨은장소, 생활꿀팁까지 한국교통대학교의 모든 캠퍼스 생활 정보">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+
+<header class="site-header" id="top">
+  <div class="wrap nav-row">
+    <a class="brand" href="#home" data-route="home" aria-label="홈으로">
+      <span class="brand-logo" id="brandLogo"></span>
+      <span class="brand-text">
+        <strong id="brandKo"></strong>
+        <small id="brandEn"></small>
+      </span>
+    </a>
+    <nav class="main-nav" aria-label="주 메뉴"><ul id="navList"></ul></nav>
+    <div class="nav-tools">
+      <form class="nav-search" id="navSearch" role="search">
+        <label class="sr-only" for="navSearchInput">검색</label>
+        <input id="navSearchInput" type="search" autocomplete="off">
+        <button type="submit" aria-label="검색"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></svg></button>
+      </form>
+      <button class="user-btn" id="userBtn" type="button" aria-label="로그인">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21.5c.6-5 4.1-7.8 8.5-7.8s7.9 2.8 8.5 7.8z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="app" tabindex="-1"></main>
+
+<footer class="site-footer">
+  <div class="wrap footer-row">
+    <div class="footer-brand">
+      <span class="brand-logo brand-logo--lg" id="footLogo"></span>
+      <span class="brand-text">
+        <strong id="footKo"></strong>
+        <small id="footEn"></small>
+      </span>
+    </div>
+    <p class="footer-slogan" id="footSlogan"></p>
+    <div class="footer-tools">
+      <ul class="socials" id="socials"></ul>
+      <button class="to-top" id="toTop" type="button" aria-label="맨 위로">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>
+      </button>
+      <img class="footer-mascot" id="footMascot" alt="">
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="data/site.js"></script>
+<script src="data/places.js"></script>
+<script src="js/social.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
