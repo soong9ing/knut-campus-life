@@ -116,8 +116,6 @@
     var ub = document.getElementById("userBtn");
     ub.setAttribute("aria-label", "내 장소 (저장한 곳)"); ub.title = "내 장소";
     ub.addEventListener("click", function () { go("favorites"); });
-    var ft = document.querySelector(".footer-tools");
-    if (ft && window.Features) ft.insertAdjacentHTML("afterbegin", Features.installButtonHTML());
     document.getElementById("toTop").addEventListener("click", function () { window.scrollTo(0, 0); });
     document.getElementById("socials").addEventListener("click", function (e) {
       var a = e.target.closest("[data-social]");

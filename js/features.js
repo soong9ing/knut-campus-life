@@ -400,19 +400,18 @@
   if (!inViewer() && "serviceWorker" in navigator && (location.protocol === "https:" || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) {
     window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
   }
-  window.addEventListener("beforeinstallprompt", function (e) {
-    e.preventDefault(); installEvt = e;
-    var b = $("installBtn"); if (b) b.hidden = false;
-  });
-  function installButtonHTML() {
-    if (inViewer()) return "";
-    var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone;
-    return '<button type="button" class="install-btn" id="installBtn"' + (installEvt || ios ? "" : " hidden") + ">📱 홈 화면에 추가</button>";
-  }
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); installEvt = e; });
+  window.addEventListener("appinstalled", function () { installEvt = null; if (window.Toast) window.Toast("홈 화면에 추가됐어요!"); });
+  // 푸터의 마스코트(#installBtn)를 누르면 홈 화면에 추가해요.
   document.addEventListener("click", function (e) {
     if (!e.target.closest("#installBtn")) return;
+    var toast = window.Toast || function () {};
+    var standalone = window.navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+    if (standalone) return toast("이미 홈 화면에서 열려 있어요 😊");
     if (installEvt) { installEvt.prompt(); installEvt = null; return; }
-    if (window.Toast) window.Toast("Safari 아래쪽 공유 버튼 → '홈 화면에 추가'를 눌러 주세요.");
+    if (inViewer()) return toast("배포된 사이트 주소에서 누르면 홈 화면에 추가할 수 있어요.");
+    if (/iphone|ipad|ipod/i.test(navigator.userAgent)) return toast("Safari 아래쪽 공유 버튼 → '홈 화면에 추가'를 눌러 주세요.");
+    toast("브라우저 메뉴(⋮) → '홈 화면에 추가' 또는 '앱 설치'를 눌러 주세요.");
   });
 
   window.Features = {
@@ -421,7 +420,6 @@
     isFav: isFav, toggleFav: toggleFav, favButtonHTML: favButtonHTML, favIds: favIds, onFav: function (fn) { favListeners.push(fn); },
     openStatus: openStatus, openBadgeHTML: openBadgeHTML,
     pickWidgetHTML: pickWidgetHTML, openPicker: openPicker,
-    reportAvailable: reportAvailable, reportHTML: reportHTML,
-    installButtonHTML: installButtonHTML
+    reportAvailable: reportAvailable, reportHTML: reportHTML
   };
 })();
