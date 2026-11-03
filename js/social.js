@@ -3,7 +3,9 @@
    -------------------------------------------------------------
    저장소: Claude 아티팩트 공유 저장소(db)
      people/<사용자 id>  = { reviews: { 장소id: {rating, text, anon, at} },
-                             likes:   { 장소id: true } }
+                             likes:   { 장소id: true },
+                             views:   { 장소id: 조회 횟수 } }
+   - 조회수: 장소 상세 창을 열 때마다 1씩 (같은 화면에서 다시 열면 세지 않음)
    - 모두 읽고, 각자 자기 문서만 써요 (규칙은 게시할 때 설정).
    - 다른 서버(Firebase 등)로 옮길 때는 아래 "저장소 연결" 부분만 바꾸면 돼요.
    ============================================================= */
@@ -15,11 +17,13 @@
     status: "loading",    // loading | ready | off (저장소를 쓸 수 없는 화면) | readonly
     me: null,             // 내 사용자 id
     isOwner: false,
-    myDoc: { reviews: {}, likes: {} },
+    myDoc: { reviews: {}, likes: {}, views: {} },
     people: {},           // uid → 문서
     agg: {}               // 장소id → {sum, n, likes, reviews:[...]}
   };
   var db = null, user = null, writing = Promise.resolve();
+  var seen = {};          // 이번 방문에서 이미 센 장소
+  var viewTimer = null;
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -31,15 +35,20 @@
     var d = doc && typeof doc === "object" ? doc : {};
     return {
       reviews: d.reviews && typeof d.reviews === "object" ? d.reviews : {},
-      likes: d.likes && typeof d.likes === "object" ? d.likes : {}
+      likes: d.likes && typeof d.likes === "object" ? d.likes : {},
+      views: d.views && typeof d.views === "object" ? d.views : {}
     };
   }
   function aggregate() {
     var agg = {};
-    function slot(pid) { return agg[pid] || (agg[pid] = { sum: 0, n: 0, likes: 0, reviews: [] }); }
+    function slot(pid) { return agg[pid] || (agg[pid] = { sum: 0, n: 0, likes: 0, views: 0, reviews: [] }); }
     Object.keys(S.people).forEach(function (uid) {
       var d = S.people[uid];
       Object.keys(d.likes).forEach(function (pid) { if (d.likes[pid] === true) slot(pid).likes++; });
+      Object.keys(d.views).forEach(function (pid) {
+        var v = Math.floor(Number(d.views[pid]));
+        if (v > 0 && v < 100000) slot(pid).views += v;
+      });
       Object.keys(d.reviews).forEach(function (pid) {
         var r = d.reviews[pid];
         var rating = Math.round(Number(r && r.rating));
@@ -96,8 +105,23 @@
     onChange: function (fn) { listeners.push(fn); },
     status: function () { return S.status; },
     stats: function (pid) {
-      var a = S.agg[pid] || { sum: 0, n: 0, likes: 0, reviews: [] };
-      return { avg: a.n ? a.sum / a.n : 0, n: a.n, likes: a.likes, reviews: a.reviews };
+      var a = S.agg[pid] || { sum: 0, n: 0, likes: 0, views: 0, reviews: [] };
+      return { avg: a.n ? a.sum / a.n : 0, n: a.n, likes: a.likes, views: a.views, reviews: a.reviews };
+    },
+    // 조회수 많은 장소 id (조회 0인 곳은 빼요)
+    topViewed: function (n) {
+      return Object.keys(S.agg).filter(function (pid) { return S.agg[pid].views > 0; })
+        .sort(function (a, b) { return S.agg[b].views - S.agg[a].views; }).slice(0, n);
+    },
+    // 상세 창을 열 때 조회 1회 기록 (쓰기 권한이 없으면 세지 않아요)
+    recordView: function (pid) {
+      if (seen[pid] || !Social.canWrite()) return;
+      seen[pid] = true;
+      S.myDoc.views[pid] = (Math.floor(Number(S.myDoc.views[pid])) || 0) + 1;
+      S.people[S.me] = JSON.parse(JSON.stringify(S.myDoc)); aggregate(); emit();
+      // 여러 곳을 연달아 열면 한 번에 모아서 저장
+      clearTimeout(viewTimer);
+      viewTimer = setTimeout(function () { saveMine().catch(function () {}); }, 1200);
     },
     liked: function (pid) { return S.myDoc.likes[pid] === true; },
     myReview: function (pid) { return S.myDoc.reviews[pid] || null; },
@@ -121,7 +145,7 @@
         return saveMine();
       }
       // 관리자(소유자)가 다른 사람 후기 삭제
-      var body = JSON.parse(JSON.stringify(S.people[uid] || { reviews: {}, likes: {} }));
+      var body = JSON.parse(JSON.stringify(S.people[uid] || { reviews: {}, likes: {}, views: {} }));
       delete body.reviews[pid];
       S.people[uid] = body; aggregate(); emit();
       return saveOther(uid, body);

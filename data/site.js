@@ -25,7 +25,9 @@ window.SITE = {
     { label: "생활꿀팁", route: "tips" },
     { label: "커뮤니티", route: "community" }
   ],
-  searchPlaceholder: "검색어를 입력하세요",
+  searchPlaceholder: "궁금한 정보를 검색해보세요.",
+  // 헤더 로고 아래 서비스 이름 (공식 로고와는 따로 표시)
+  subtitle: "",
 
   hero: {
     image: "assets/img/hero-campus.jpg",
@@ -54,12 +56,13 @@ window.SITE = {
     mascot: "assets/img/map-mascot.png",
     // 지도 그림 위 핀 위치(%)는 그림 기준이에요. 그림을 바꾸면 x, y도 함께 맞춰 주세요.
     // keyword: 캠퍼스 지도 화면에서 관련 정보를 찾을 때 쓰는 단어
+    // 핀 위치(%): x, y는 핀 꼬리가 가리키는 건물 지점이에요. flip: true면 말풍선이 왼쪽으로 펼쳐져요.
     pins: [
-      { label: "종합강의관", code: "W5", x: 64.7, y: 5.9, keyword: "종합강의", desc: "우체국·농협·복사실·무인 프린터·증명발급기·휴게라운지" },
-      { label: "중앙도서관", code: "W20", x: 25.7, y: 26.3, keyword: "도서관", desc: "열람실·디지털정보센터·캐럴실·CU 도서관점" },
-      { label: "학생회관", code: "E6", x: 72.7, y: 33.9, keyword: "학생회관", desc: "국원피트니스클럽·IDF·3·4층 로비 휴식장소" },
-      { label: "대운동장", code: "W19", x: 35.7, y: 61.9, keyword: "운동장", desc: "트랙·스탠드, 18시 이후 조명" },
-      { label: "기숙사", code: "", x: 81.2, y: 69.5, keyword: "생활관", desc: "국원(E3)·대원(E16)·중원(W10)·예성(W11)생활관" }
+      { label: "종합강의관", code: "W5", x: 49.2, y: 46.9, flip: true, keyword: "종합강의", desc: "우체국·농협·복사실·무인 프린터·증명발급기·휴게라운지" },
+      { label: "중앙도서관", code: "W20", x: 35.4, y: 64.0, keyword: "도서관", desc: "열람실·디지털정보센터·캐럴실·CU 도서관점" },
+      { label: "학생회관", code: "E6", x: 65.2, y: 49.6, keyword: "학생회관", desc: "국원피트니스클럽·IDF·3·4층 로비 휴식장소" },
+      { label: "대운동장", code: "W19", x: 27.3, y: 73.2, flip: true, keyword: "운동장", desc: "트랙·스탠드, 18시 이후 조명" },
+      { label: "기숙사", code: "E3", x: 75.6, y: 75.8, keyword: "생활관", desc: "국원(E3)·대원(E16)·중원(W10)·예성(W11)생활관" }
     ],
     // 학교 공식 캠퍼스 지도 (충주캠퍼스)
     officialMap: "https://www.ut.ac.kr/prog/campusMap/kor/sub01_07_02/list.do?campus_code=dorm1",
@@ -74,7 +77,7 @@ window.SITE = {
       { code: "E7", name: "경영항공관" },
       { code: "E8", name: "대학본부", alias: ["교직원식당", "학생식당"] },
       { code: "E8-1", name: "대학본부 별관", alias: ["복지관", "본부별관"] },
-      { code: "E9", name: "항공,기계실습실" },
+      { code: "E9", name: "항공,기계실습관" },
       { code: "E10", name: "역학시험동" },
       { code: "E11", name: "창업생산동" },
       { code: "E12", name: "건축관" },
@@ -103,54 +106,52 @@ window.SITE = {
       { code: "W20", name: "중앙도서관/교육관" },
       { code: "W22", name: "환경관" }
     ],
-    // 캠퍼스 지도 화면의 큰 일러스트 (학교 공식 지도를 바탕으로 그린 그림)
-    //  - labels: 건물 코드 라벨 위치(그림 기준 %). 코드는 아래 buildings와 연결돼요.
-    //  - 공식 지도와 대조해 W9·W3 자리를 바로잡고 W2·E14를 추가했어요.
-    //  - W10은 W11과 붙은 건물이라 W11 옆에, E18은 E6과 같은 건물이라 E6 옆에 표시해요.
-    //  - W15(동아리관)는 그림에 건물이 없어 W9→W16 내려가는 길 위에 라벨만 붙였어요.
+    // 캠퍼스 지도 화면의 큰 일러스트 (학교 공식 지도를 바탕으로 다시 그린 그림, 1774×887)
+    //  - labels: 그림에 그려진 건물 번호 위치(그림 기준 %). x, y는 가운데, w, h는 크기예요.
+    //    그림의 번호 위에 보이지 않는 버튼이 올라가고, 누르면 노란색으로 표시돼요.
+    //  - drawn: false 는 그림에 번호가 없어 화면에서 라벨을 그려 넣는 건물이에요 (W6, E17: 공식 지도 배치를 참고한 위치).
     campusMap: {
       image: "assets/img/campus-map.jpg",
-      tag: "한눈에 보는",
-      title: "캠퍼스 지도",
+      width: 1774, height: 887,
       descLines: ["건물 번호를 누르면", "건물 정보와 근처 꿀팁이 보여요!"],
       labels: [
-      { code: "E16", x: 79.4, y: 5.3 },
-      { code: "W10", x: 45.6, y: 5.5 },
-      { code: "W11", x: 49.7, y: 5.5 },
-      { code: "W13", x: 60.5, y: 5.7 },
-      { code: "W9", x: 38.3, y: 11.5 },
-      { code: "E15", x: 84.5, y: 15.0 },
-      { code: "E17", x: 78.8, y: 16.8 },
-      { code: "E13", x: 56.5, y: 17.4 },
-      { code: "E10", x: 84.0, y: 22.5 },
-      { code: "E11", x: 88.7, y: 23.4 },
-      { code: "E9", x: 79.0, y: 25.3 },
-      { code: "E12", x: 52.0, y: 25.7 },
-      { code: "E8", x: 68.2, y: 33.3 },
-      { code: "W7", x: 53.3, y: 34.5 },
-      { code: "W16", x: 25.1, y: 34.6 },
-      { code: "W15", x: 21.5, y: 29.5 },
-      { code: "W17", x: 31.4, y: 35.9 },
-      { code: "E7", x: 88.0, y: 38.7 },
-      { code: "W18", x: 31.6, y: 42.4 },
-      { code: "E6", x: 80.1, y: 43.2 },
-      { code: "E18", x: 84.0, y: 43.2 },
-      { code: "W5", x: 52.1, y: 43.3 },
-      { code: "E8-1", x: 66.9, y: 44.3 },
-      { code: "W6", x: 48.0, y: 46.2 },
-      { code: "W4", x: 52.3, y: 50.5 },
-      { code: "E4", x: 88.4, y: 55.0 },
-      { code: "E5", x: 79.7, y: 55.8 },
-      { code: "W19", x: 20.4, y: 61.3 },
-      { code: "W20", x: 30.1, y: 61.3 },
-      { code: "W3", x: 53.7, y: 65.2 },
-      { code: "E3", x: 87.4, y: 66.0 },
-      { code: "W22", x: 7.7, y: 71.8 },
-      { code: "W1", x: 48.6, y: 77.1 },
-      { code: "E2", x: 73.3, y: 77.2 },
-      { code: "E1", x: 66.2, y: 80.5 },
-      { code: "W2", x: 48.2, y: 66.1 },
-      { code: "E14", x: 67.7, y: 8.3 }
+      { code: "E1", x: 58.46, y: 86.92, w: 3.04, h: 4.74 },
+      { code: "E2", x: 65.11, y: 83.65, w: 3.04, h: 5.30 },
+      { code: "E3", x: 75.65, y: 73.84, w: 3.04, h: 4.74 },
+      { code: "E4", x: 76.49, y: 60.32, w: 3.10, h: 4.74 },
+      { code: "E5", x: 70.01, y: 62.23, w: 3.10, h: 4.51 },
+      { code: "E6", x: 65.16, y: 49.61, w: 3.16, h: 4.74 },
+      { code: "E7", x: 72.49, y: 44.64, w: 3.10, h: 4.74 },
+      { code: "E8", x: 60.94, y: 36.41, w: 3.04, h: 4.51 },
+      { code: "E8-1", x: 60.09, y: 44.76, w: 3.83, h: 5.30 },
+      { code: "E9", x: 64.66, y: 30.21, w: 2.93, h: 4.40 },
+      { code: "E10", x: 66.85, y: 25.82, w: 3.44, h: 4.62 },
+      { code: "E11", x: 71.98, y: 26.04, w: 3.49, h: 4.62 },
+      { code: "E12", x: 47.91, y: 28.41, w: 3.44, h: 4.51 },
+      { code: "E13", x: 51.47, y: 19.28, w: 3.55, h: 4.62 },
+      { code: "E14", x: 57.05, y: 12.74, w: 3.89, h: 4.74 },
+      { code: "E15", x: 69.00, y: 16.91, w: 3.49, h: 4.74 },
+      { code: "E16", x: 65.45, y: 5.75, w: 3.66, h: 4.74 },
+      { code: "E18", x: 69.50, y: 49.27, w: 3.49, h: 4.74 },
+      { code: "W1", x: 46.05, y: 83.31, w: 3.49, h: 4.85 },
+      { code: "W2", x: 46.05, y: 72.60, w: 3.38, h: 4.74 },
+      { code: "W3", x: 50.79, y: 69.90, w: 3.38, h: 4.74 },
+      { code: "W4", x: 49.15, y: 55.02, w: 3.55, h: 4.85 },
+      { code: "W5", x: 49.15, y: 47.13, w: 3.44, h: 4.74 },
+      { code: "W7", x: 49.72, y: 38.11, w: 3.38, h: 4.62 },
+      { code: "W9", x: 35.85, y: 13.19, w: 3.38, h: 4.62 },
+      { code: "W10", x: 43.80, y: 4.51, w: 3.83, h: 4.74 },
+      { code: "W11", x: 49.38, y: 3.95, w: 3.95, h: 5.07 },
+      { code: "W13", x: 54.90, y: 4.40, w: 4.00, h: 4.85 },
+      { code: "W15", x: 25.08, y: 22.89, w: 4.28, h: 5.52 },
+      { code: "W16", x: 25.82, y: 39.91, w: 3.78, h: 5.52 },
+      { code: "W17", x: 31.29, y: 41.94, w: 3.66, h: 4.51 },
+      { code: "W18", x: 31.51, y: 48.03, w: 3.78, h: 4.74 },
+      { code: "W19", x: 27.34, y: 71.48, w: 3.95, h: 4.96 },
+      { code: "W20", x: 35.40, y: 69.33, w: 3.55, h: 4.51 },
+      { code: "W22", x: 19.11, y: 81.29, w: 3.83, h: 6.09 },
+      { code: "W6", x: 44.53, y: 50.96, drawn: false },
+      { code: "E17", x: 64.15, y: 22.55, drawn: false }
       ]
     },
     naverMap: "https://map.naver.com/p/search/%ED%95%9C%EA%B5%AD%EA%B5%90%ED%86%B5%EB%8C%80%ED%95%99%EA%B5%90%20%EC%B6%A9%EC%A3%BC%EC%BA%A0%ED%8D%BC%EC%8A%A4"
@@ -158,22 +159,43 @@ window.SITE = {
 
   popular: {
     title: "지금 가장 인기있는 콘텐츠",
-    noteLines: ["다른 친구들은 뭐 볼까?", "지금 가장 핫한 캠퍼스 소식!"],
-    // views(조회수)는 임시 숫자예요. 실제 조회수 집계가 생기면 바꿔 주세요.
-    items: [
-      { badge: "숨은장소", color: "green", title: "벚꽃 명소 추천!", desc: ["캠퍼스 안에서 만나는", "벚꽃 힐링 스팟"], img: "assets/img/popular-1.jpg", views: 2341, route: "hidden", filter: "벚꽃 명소", placeholder: true },
-      { badge: "맛집", color: "burgundy", title: "학생회관 근처 맛집 BEST 5", desc: ["학생들이 직접 추천한", "맛집 리스트!"], img: "assets/img/popular-2.jpg", views: 5672, route: "food", sort: "recommend", placeholder: true },
-      { badge: "생활꿀팁", color: "orange", title: "대학생활 꿀팁 10가지", desc: ["수강신청부터 과제까지", "알아두면 유용한 꿀팁!"], img: "assets/img/popular-3.jpg", views: 12083, route: "tips", filter: "학사·학교생활", placeholder: true },
-      { badge: "커뮤니티", color: "pink", title: "지금 우리 학교는?", desc: ["선배들이 들려주는", "캠퍼스 생활 이야기"], img: "assets/img/popular-4.jpg", views: 8456, route: "community", placeholder: true },
-      { badge: "이벤트", color: "coral", title: "교내 행사 캘린더", desc: ["놓치지 말아야 할", "이번 달 주요 행사!"], img: "assets/img/popular-5.jpg", views: 3217, route: "events", placeholder: true }
-    ]
+    noteLines: [],
+    // 조회수가 많은 정보가 자동으로 올라와요 (상세 창을 열 때마다 조회 1회).
+    // 조회 기록이 모자라면 추천인 수가 많은 정보로 채워요. count: 보여 줄 개수
+    count: 5
   },
 
   // [임시] 시안에 있던 공지 예시예요. 실제 공지로 바꿔 주세요.
+  // 학교 홈페이지 공지에서 가져온 실제 공지 (2026-11-03 기준). 위에서 3개가 홈 화면에 보여요.
+  //  - tag: 분류, dept: 올린 부서, points: 요약, url: 원문
+  //  - 요약은 원문 일부를 간추린 거예요. 정확한 내용은 원문을 확인하도록 안내해요.
   notices: [
-    { title: "2025학년도 1학기 수강신청 안내", date: "2025.02.10", body: "실제 공지 내용으로 바꿔 주세요.", placeholder: true },
-    { title: "학생회관 리모델링 공사 안내", date: "2025.02.05", body: "실제 공지 내용으로 바꿔 주세요.", placeholder: true },
-    { title: "교내 행사 · \"대동제\" 진행 안내", date: "2025.01.15", body: "실제 공지 내용으로 바꿔 주세요.", placeholder: true }
+    { tag: "수강신청", title: "NEW) 국립한국교통대학교 수강신청 시스템 매뉴얼 안내", date: "2026.07.21", dept: "학사관리과",
+      points: ["2026학년도 2학기부터 개편된 수강신청시스템(sugang.ut.ac.kr) 사용", "최근 로그인한 기기 1대만 사용 가능, 다중 로그인 제한", "정원 마감 과목은 취소 발생 시 대기 교과목 → 11:00, 17:00 이후 신청 가능", "장바구니에 담기만 하면 신청 아님, 최종 수강신청 기간에 \"신청\"을 눌러야 확정"],
+      url: "https://www.ut.ac.kr/cop/bbs/BBSMSTR_000000000055/selectBoardArticle.do?bbsId=BBSMSTR_000000000055&nttId=1123293" },
+    { tag: "통학버스", title: "[페이코] 통학버스 승차권 사용자 가이드", date: "2026.02.26", dept: "학생과",
+      points: ["이천 부발·청주 노선 승차권은 페이코(PAYCO)로 구매", "충주터미널 ↔ 충주역 ↔ 충주캠퍼스 노선은 무료, 별도 신청 없이 탑승", "노선별 운행시간·탑승위치는 원문 링크에서 확인"],
+      url: "https://www.ut.ac.kr/cop/bbs/BBSMSTR_000000000059/selectBoardArticle.do?bbsId=BBSMSTR_000000000059&nttId=1086631" },
+    { tag: "시험", title: "2026학년도 2학기 졸업종합시험 실시 안내", date: "2026.09.21", dept: "학사관리과",
+      points: ["1차 2026.11.2.(월) ~ 11.13.(금), 2차 11.30.(월) ~ 12.4.(금) 예정 (학과별 별도 공고)", "대상: 3학년 과정 수료자(건축학전공은 4학년), 조기졸업 신청자, 미통과자", "시험과목·일자는 소속 학과 사무실에서 꼭 확인", "합격: 과목별 40점 이상 + 평균 60점 이상"],
+      url: "https://www.ut.ac.kr/cop/bbs/BBSMSTR_000000000055/selectBoardArticle.do?bbsId=BBSMSTR_000000000055&nttId=1125010" },
+    { tag: "학사", title: "2027학년도 1학기 전과 시행 안내", date: "2026.11.03", dept: "학사관리과",
+      points: ["신청기간: 2027.1.8.(금) 09:00 ~ 1.14.(목) 18:00 (주말 제외)", "희망학과 상담 → 원소속·희망학과 확인 → 학사관리과 방문 제출", "허가 확정 통보: 2027.1.21.(목) 예정"],
+      url: "https://www.ut.ac.kr/cop/bbs/BBSMSTR_000000000055/selectBoardArticle.do?bbsId=BBSMSTR_000000000055&nttId=1125808" },
+    { tag: "수강신청", title: "2026학년도 동계 계절학기 운영 계획 안내", date: "2026.10.12", dept: "학사관리과",
+      points: ["수업기간: 2026.12.22.(화) ~ 2027.1.13.(수), 3주간 대면수업", "신청학점 6학점 이내, 우리대학 강좌 1학점당 30,400원", "수강신청 기간·방법은 원문에서 확인"],
+      url: "https://www.ut.ac.kr/cop/bbs/BBSMSTR_000000000055/selectBoardArticle.do?bbsId=BBSMSTR_000000000055&nttId=1125335" },
+    { tag: "학사", title: "2026학년도 2학기 수업일수 3/4이상 수강한 휴학생 성적인정 신청 안내", date: "2026.10.14", dept: "학사관리과",
+      points: ["대상: 2026.11.25.(수) 이후 병역 등으로 휴학하는 학생", "신청기간: 2026.11.30.(월) ~ 12.7.(월) 18:00", "접수: 학사관리과(충주)"],
+      url: "https://www.ut.ac.kr/cop/bbs/BBSMSTR_000000000055/selectBoardArticle.do?bbsId=BBSMSTR_000000000055&nttId=1125391" },
+    { tag: "수강신청", title: "2026학년도 2학기 수강신청 교과목 철회 신청기간 안내", date: "2026.09.07", dept: "학사관리과",
+      points: ["신청기간 2026.9.21.(월) ~ 9.23.(수) (마감됨)", "통합정보시스템 → 학부생 → 수강 → 수강철회신청, 3과목 이내"],
+      url: "https://www.ut.ac.kr/cop/bbs/BBSMSTR_000000000055/selectBoardArticle.do?bbsId=BBSMSTR_000000000055&nttId=1124528" }
+  ],
+  // 학교 공지 게시판 바로가기
+  noticeBoards: [
+    { label: "학사공지", url: "https://www.ut.ac.kr/cop/bbs/BBSMSTR_000000000055/selectBoardList.do" },
+    { label: "일반 공지사항", url: "https://www.ut.ac.kr/cop/bbs/BBSMSTR_000000000059/selectBoardList.do" }
   ],
 
   // [임시] 행사 캘린더 예시
@@ -191,21 +213,20 @@ window.SITE = {
     { cat: "정보", title: "시험기간 도서관 3층 자리 없으면 5층 강의실 가세요", meta: "익명 · 예시 글", placeholder: true }
   ],
 
-  banner: {
-    image: "assets/img/banner-campus.jpg",
-    lines: ["오늘도, 좋은 하루", "한국교통대학교에서!"],
-    button: "캠퍼스 둘러보기",
-    route: "hidden"
-  },
+  banner: null,  // 홈 하단 배너 (없앰). 다시 쓰려면 { image, lines, button, route }를 넣어 주세요.
 
   footer: {
     lines: ["더 넓은 세상으로", "함께 가는 한국교통대학교"],
     mascot: "assets/img/footer-mascot.png",
     // url이 비어 있으면 "링크 준비 중" 안내가 떠요. 실제 주소를 넣어 주세요.
+    // 학교 홈페이지(www.ut.ac.kr) 하단에 걸린 공식 SNS 주소 (2026-11-03 확인)
+    // 아이콘을 더 넣으려면 type을 instagram, youtube, blog, kakao, facebook 중에서 골라 추가하세요.
     socials: [
-      { type: "instagram", label: "인스타그램", url: "", placeholder: true },
-      { type: "youtube", label: "유튜브", url: "", placeholder: true },
-      { type: "chat", label: "채팅 채널", url: "", placeholder: true }
+      { type: "instagram", label: "한국교통대학교 인스타그램", url: "https://www.instagram.com/knut_rising/" },
+      { type: "youtube", label: "한국교통대학교 유튜브", url: "https://www.youtube.com/channel/UCxy8o0ygKBHr0Gw9mTg8e6w" },
+      { type: "blog", label: "한국교통대학교 네이버 블로그", url: "https://blog.naver.com/cjnupr" },
+      { type: "kakao", label: "한국교통대학교 카카오톡 채널", url: "https://pf.kakao.com/_YUWdj" },
+      { type: "facebook", label: "한국교통대학교 페이스북", url: "https://www.facebook.com/knutpr" }
     ]
   },
 

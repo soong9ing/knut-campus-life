@@ -46,7 +46,15 @@
     ribbonPin: '<svg class="pin-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11"/><path class="hole" d="M12 5.2a4.7 4.7 0 0 0-4.7 4.7c0 3.5 4.7 8 4.7 8s4.7-4.5 4.7-8A4.7 4.7 0 0 0 12 5.2z"/><circle cx="12" cy="9.9" r="1.8"/></svg>',
     instagram: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg>',
     youtube: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1.5" y="4.5" width="21" height="15" rx="4.5" fill="#fff"/><path d="M10 8.8v6.4l5.6-3.2z" fill="#752432"/></svg>',
-    chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.6 1.6 4.9 4 6.4L5.2 21l4.1-2.4c.9.2 1.8.3 2.7.3 5.5 0 10-3.6 10-8S17.5 3 12 3z" fill="#fff"/><text x="12" y="13.2" text-anchor="middle" font-size="5.4" font-weight="700" font-family="sans-serif" fill="#752432">chat</text></svg>'
+    chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.6 1.6 4.9 4 6.4L5.2 21l4.1-2.4c.9.2 1.8.3 2.7.3 5.5 0 10-3.6 10-8S17.5 3 12 3z" fill="#fff"/><text x="12" y="13.2" text-anchor="middle" font-size="5.4" font-weight="700" font-family="sans-serif" fill="#752432">chat</text></svg>',
+    blog: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C6.5 3 2 6.4 2 10.6c0 2.5 1.6 4.7 4 6.1L5.3 20.5l4-2.4c.9.2 1.8.3 2.7.3 5.5 0 10-3.4 10-7.6S17.5 3 12 3z" fill="#fff"/><text x="12" y="12.6" text-anchor="middle" font-size="5.6" font-weight="700" font-family="sans-serif" fill="#752432">blog</text></svg>',
+    kakao: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5C6.8 3.5 2.6 6.8 2.6 10.9c0 2.6 1.7 4.9 4.3 6.2l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.4 0 .9.1 1.3.1 5.2 0 9.4-3.3 9.4-7.5S17.2 3.5 12 3.5z" fill="#fff"/><text x="12" y="12.8" text-anchor="middle" font-size="5.4" font-weight="800" font-family="sans-serif" fill="#752432">TALK</text></svg>',
+    facebook: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#fff"/><path d="M13.2 19v-6h2l.3-2.4h-2.3V9.2c0-.7.2-1.1 1.2-1.1h1.2V6c-.2 0-1-.1-1.8-.1-1.8 0-3 1.1-3 3.1v1.6h-2V13h2v6z" fill="#752432"/></svg>'
+  };
+  var NAV_ICON = {
+    heart: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 8 3.4 4.5 7 4.5c2.1 0 3.6 1.2 5 2.9 1.4-1.7 2.9-2.9 5-2.9 3.6 0 5.6 3.5 4.3 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg>',
+    bow: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 10.5 4 5v14l8-5.5 8 5.5V5z"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>',
+    bowFill: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 10.5 4.5 5.2C3.4 4.5 2 5.3 2 6.6v10.8c0 1.3 1.4 2.1 2.5 1.4l7.5-5.3 7.5 5.3c1.1.7 2.5-.1 2.5-1.4V6.6c0-1.3-1.4-2.1-2.5-1.4z"/><circle cx="12" cy="12" r="2.4"/></svg>'
   };
   function arrowDot() { return '<span class="arrow-dot" aria-hidden="true">' + ICON.arrow + "</span>"; }
   function toast(msg) {
@@ -77,9 +85,11 @@
   function initChrome() {
     if (S.logo && (S.logo.srcOnDark || S.logo.src)) {
       // 공식 시그니처: 엠블럼과 글자가 한 이미지라 따로 넣은 학교명 글자는 숨겨요
-      var sig = '<img class="brand-sig" src="' + esc(S.logo.srcOnDark || S.logo.src) + '" alt="' + esc(S.logo.alt) + '">';
-      document.querySelector(".brand").innerHTML = sig;
-      document.querySelector(".footer-brand").innerHTML = sig;
+      // 밝은 헤더에는 원래 색 로고, 버건디 푸터에는 흰색 로고
+      var sigLight = '<img class="brand-sig" src="' + esc(S.logo.src || S.logo.srcOnDark) + '" alt="' + esc(S.logo.alt) + '">';
+      var sigDark = '<img class="brand-sig" src="' + esc(S.logo.srcOnDark || S.logo.src) + '" alt="' + esc(S.logo.alt) + '">';
+      document.querySelector(".brand").innerHTML = sigLight + (S.subtitle ? '<span class="brand-sub">' + esc(S.subtitle) + "</span>" : "");
+      document.querySelector(".footer-brand").innerHTML = sigDark;
     } else {
       document.getElementById("brandLogo").innerHTML = logoHTML();
       document.getElementById("footLogo").innerHTML = logoHTML();
@@ -88,7 +98,7 @@
     ["brandEn", "footEn"].forEach(function (id) { var e = document.getElementById(id); if (e) e.textContent = S.school.en; });
     document.getElementById("navSearchInput").placeholder = S.searchPlaceholder;
     document.getElementById("navList").innerHTML = S.nav.map(function (n) {
-      return '<li><a href="#' + n.route + '" data-nav="' + n.route + '">' + esc(n.label) + "</a></li>";
+      return '<li><a href="#' + n.route + '" data-nav="' + n.route + '">' + (n.icon && NAV_ICON[n.icon] ? NAV_ICON[n.icon] : "") + esc(n.label) + "</a></li>";
     }).join("");
     document.getElementById("footSlogan").innerHTML = lines(S.footer.lines);
     document.getElementById("footMascot").src = S.footer.mascot;
@@ -126,9 +136,10 @@
         '<div class="hero-stage">' +
           '<img class="hero-bg" src="' + esc(h.image) + '" alt="손그림 캠퍼스 풍경 일러스트">' +
           '<div class="hero-content">' +
-            '<p class="hero-tag">' + esc(h.tag) + "</p>" +
-            '<h1 class="hero-title">' + lines(h.titleLines) + "</h1>" +
-            '<p class="hero-desc">' + lines(h.descLines) + "</p>" +
+            // 제목·소개 글씨는 그림에 그려져 있어요. 아래 글자는 검색·화면읽기용으로만 숨겨 둬요.
+            '<div class="sr-only"><p>' + esc(h.tag) + "</p>" +
+            "<h1>" + esc(h.titleLines.join(" ")) + "</h1>" +
+            "<p>" + esc(h.descLines.join(" ")) + "</p></div>" +
             '<form class="hero-search" id="heroSearch" role="search">' + ICON.search +
               '<label class="sr-only" for="heroSearchInput">정보 검색</label>' +
               '<input id="heroSearchInput" type="search" autocomplete="off" placeholder="' + esc(h.searchPlaceholder) + '">' +
@@ -166,38 +177,32 @@
         '<section class="popular" aria-labelledby="popTitle">' +
           '<div class="section-head">' +
             '<h2 class="section-title" id="popTitle"><img src="assets/img/icon-bulb.png" alt="">' + esc(pop.title) + "</h2>" +
-            '<div class="pop-note" aria-hidden="true"><span class="marks"><span>➚</span><span>–</span></span><p>' + lines(pop.noteLines) + '</p><img src="assets/img/doodle-cloud.png" alt=""></div>' +
+            ((pop.noteLines || []).length ? '<div class="pop-note" aria-hidden="true"><span class="marks"><span>➚</span><span>–</span></span><p>' + lines(pop.noteLines) + '</p><img src="assets/img/doodle-cloud.png" alt=""></div>' : "") +
           "</div>" +
-          '<div class="pop-cards">' +
-            pop.items.map(function (it, i) {
-              return '<a class="pop-card" href="#' + it.route + '" data-pop="' + i + '">' +
-                '<div class="pop-thumb"><img src="' + esc(it.img) + '" alt=""><span class="badge badge--' + it.color + '">' + esc(it.badge) + "</span></div>" +
-                '<div class="pop-body"><h3>' + esc(it.title) + "</h3><p>" + lines(it.desc) + "</p>" +
-                  '<div class="pop-foot"><span class="views">' + ICON.eye + "조회수 " + it.views.toLocaleString("ko-KR") + "</span>" + arrowDot() + "</div>" +
-                "</div></a>";
-            }).join("") +
-          "</div>" +
+          '<div class="pop-cards" id="popCards">' + popularCardsHTML() + "</div>" +
+          '<p class="pop-hint" id="popHint">' + esc(popularHint()) + "</p>" +
         "</section>" +
 
         // ⑥ 공지 + 배너
-        '<section class="bottom-row">' +
+        '<section class="bottom-row' + (b ? "" : " bottom-row--single") + '">' +
           '<div class="notice-card">' +
             '<div class="notice-head"><h2><img src="assets/img/icon-megaphone.png" alt="">공지사항</h2>' +
               '<a class="more-link" href="#notice">전체보기' + ICON.arrow + "</a></div>" +
             '<ul class="notice-list">' +
               S.notices.slice(0, 3).map(function (n, i) {
-                return '<li><a href="#notice" data-notice="' + i + '"><span>' + esc(n.title) + "</span><time>" + esc(n.date) + "</time></a></li>";
+                return '<li><a href="#notice" data-notice="' + i + '"><span>' + (n.tag ? '<b class="notice-tag">[' + esc(n.tag) + "]</b> " : "") + esc(n.title) + "</span><time>" + esc(n.date) + "</time></a></li>";
               }).join("") +
             "</ul>" +
           "</div>" +
-          '<div class="banner">' +
-            '<img src="' + esc(b.image) + '" alt="캠퍼스 풍경 일러스트">' +
-            '<p class="banner-text">' + lines(b.lines) + "</p>" +
-            '<a class="banner-btn" href="#' + b.route + '">' + esc(b.button) + "</a>" +
-          "</div>" +
+          // 배너: data/site.js의 banner를 null로 두면 표시하지 않아요
+          (b ? '<div class="banner">' +
+            '<img src="' + esc(b.image) + '" alt="">' +
+            '<p class="sr-only">' + esc(b.lines.join(" ")) + "</p>" +
+            '<a class="banner-btn" href="#' + b.route + '"><span class="sr-only">' + esc(b.button) + "</span></a>" +
+          "</div>" : "") +
         "</section>" +
       "</div>" +
-      '<div class="page-end" aria-hidden="true"><img class="bush bush--l" src="assets/img/bush-left.png" alt=""><img class="bush bush--r" src="assets/img/bush-right.png" alt=""></div>'
+      '<div class="page-end" aria-hidden="true"></div>'
     );
   }
   function mapFigureHTML(interactive) {
@@ -206,10 +211,49 @@
       '<img src="' + esc(m.image) + '" alt="캠퍼스 지도 일러스트">' +
       '<div class="map-ribbon">' + ICON.ribbonPin + "<span>" + esc(m.ribbon[0]) + "<b>" + esc(m.ribbon[1]) + "</b></span></div>" +
       m.pins.map(function (p, i) {
-        var cls = "map-pin" + (interactive && state.sel.type === "pin" && state.sel.idx === i ? " is-active" : "");
+        var cls = "map-pin" + (p.flip ? " map-pin--flip" : "") + (interactive && state.sel.type === "pin" && state.sel.idx === i ? " is-active" : "");
         return '<a class="' + cls + '" href="#map" data-pin="' + i + '" style="left:' + p.x + "%;top:" + p.y + '%">' + ICON.pin + esc(p.label) + "</a>";
       }).join("") +
       "</div>";
+  }
+
+  /* ---------- 인기 콘텐츠: 조회수 많은 정보 ---------- */
+  var SEC_BADGE = { hidden: "green", food: "burgundy", tips: "orange", etc: "pink" };
+  function popularItems() {
+    var Soc = window.Social, n = (S.popular && S.popular.count) || 5, ids = [], seenIds = {};
+    if (Soc) Soc.topViewed(n).forEach(function (id) { if (PLACE_BY_ID[id]) { ids.push(id); seenIds[id] = true; } });
+    // 조회 기록이 모자라면 추천인 수가 많은 순으로 채워요
+    if (ids.length < n) {
+      Object.keys(PLACE_BY_ID).map(function (id) { return PLACE_BY_ID[id]; })
+        .sort(function (a, b) { return (b.it.recommend || 0) - (a.it.recommend || 0) || a.it.name.localeCompare(b.it.name, "ko"); })
+        .forEach(function (p) { if (ids.length < n && !seenIds[p.it.id]) { ids.push(p.it.id); seenIds[p.it.id] = true; } });
+    }
+    return ids.map(function (id) { return PLACE_BY_ID[id]; });
+  }
+  function popularHint() {
+    var Soc = window.Social;
+    var viewed = Soc ? Soc.topViewed(1).length : 0;
+    return viewed ? "학생들이 많이 열어 본 정보 순서예요. 카드를 누르면 자세한 내용과 후기를 볼 수 있어요."
+                  : "아직 조회 기록이 적어서 추천인 수가 많은 정보를 먼저 보여 줘요.";
+  }
+  function firstLine(note) {
+    var l = String(note || "").split("\n").filter(function (x) { return x && !/^https?:|^참고|^txt|^전화/.test(x); })[0] || "";
+    return l.length > 40 ? l.slice(0, 38) + "…" : l;
+  }
+  function popularCardsHTML() {
+    var Soc = window.Social;
+    return popularItems().map(function (p, i) {
+      var it = p.it, st = Soc ? Soc.stats(it.id) : { views: 0, avg: 0, n: 0 };
+      var meta = [it.subcategory || it.category, it.area].filter(Boolean).join(" · ");
+      return '<button type="button" class="pop-card" data-review="' + esc(it.id) + '">' +
+        '<div class="pop-top"><span class="pop-rank">' + (i + 1) + '</span><span class="badge badge--' + SEC_BADGE[p.sec] + '">' + esc(SECTION_LABEL[p.sec]) + "</span></div>" +
+        '<div class="pop-body"><h3>' + esc(it.name) + "</h3>" +
+          '<p class="pop-meta">' + esc(meta) + "</p>" +
+          '<p class="pop-desc">' + esc(firstLine(it.note)) + "</p>" +
+          '<div class="pop-foot"><span class="views">' + ICON.eye + "조회수 " + (st.views || 0).toLocaleString("ko-KR") +
+            (st.n ? ' <span class="pop-star">★ ' + st.avg.toFixed(1) + "</span>" : "") + "</span>" + arrowDot() + "</div>" +
+        "</div></button>";
+    }).join("");
   }
 
   /* ---------- 후기·좋아요 ---------- */
@@ -234,6 +278,17 @@
   }
   function refreshSocial() {
     document.querySelectorAll("[data-stat]").forEach(function (el) { el.innerHTML = socialHTML(el.dataset.stat); });
+    var pc = document.getElementById("popCards");
+    if (pc) {
+      var focused = pc.contains(document.activeElement) ? document.activeElement.getAttribute("data-review") : null;
+      var html = popularCardsHTML();
+      if (pc.innerHTML !== html) {
+        pc.innerHTML = html;
+        if (focused) { var again = pc.querySelector('[data-review="' + focused + '"]'); if (again) again.focus(); }
+        if (modal.lastFocus && !document.body.contains(modal.lastFocus) && focused) modal.lastFocus = pc.querySelector('[data-review="' + focused + '"]');
+      }
+      document.getElementById("popHint").textContent = popularHint();
+    }
     if (modal.pid) renderModalList();
   }
   function blockedMsg(code) {
@@ -253,6 +308,7 @@
       '<div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="mTitle">' +
         '<button type="button" class="modal-x" data-close aria-label="닫기">×</button>' +
         '<p class="modal-sec" id="mSec"></p><h2 id="mTitle"></h2>' +
+        '<div class="modal-info" id="mInfo"></div>' +
         '<div class="modal-sum" id="mSum"></div>' +
         '<form class="review-form" id="mForm">' +
           '<p class="rf-title" id="mFormTitle">후기 쓰기</p>' +
@@ -339,7 +395,7 @@
   function renderModalList() {
     var Soc = window.Social, el = modal.el, s = Soc.stats(modal.pid);
     el.querySelector("#mSum").innerHTML = s.n
-      ? starsHTML(s.avg, "lg") + "<b>" + s.avg.toFixed(1) + "</b><span>/ 5 · 후기 " + s.n + "개 · 좋아요 " + s.likes + "</span>"
+      ? starsHTML(s.avg, "lg") + "<b>" + s.avg.toFixed(1) + "</b><span>/ 5 · 후기 " + s.n + "개 · 좋아요 " + s.likes + " · 조회 " + s.views + "</span>"
       : "<span>아직 후기가 없어요. 첫 후기를 남겨 주세요!</span>" + (s.likes ? "<span> · 좋아요 " + s.likes + "</span>" : "");
     var list = el.querySelector("#mList"), pid = modal.pid;
     var ids = s.reviews.filter(function (r) { return !r.anon; }).map(function (r) { return r.uid; });
@@ -368,13 +424,24 @@
     modal.pid = pid; modal.lastFocus = document.activeElement;
     modal.el.querySelector("#mSec").textContent = SECTION_LABEL[place.sec] + " · " + place.it.category;
     modal.el.querySelector("#mTitle").textContent = place.it.name;
+    var it = place.it, url = mapUrl(it), info = modal.el.querySelector("#mInfo");
+    info.innerHTML =
+      (it.location ? '<p class="meta">📍 ' + esc(it.location) + "</p>" : "") +
+      (it.price ? '<p class="meta"><b>가격</b> ' + esc(it.price) + "</p>" : "") +
+      (it.note ? '<p class="note">' + linkify(it.note) + "</p>" : "") +
+      (url ? '<a class="map-link" href="' + esc(url) + '" target="_blank" rel="noopener">지도에서 보기 ↗</a>' : "");
     fillForm(); renderModalList();
+    if (window.Social) window.Social.recordView(pid);
     modal.el.hidden = false; document.body.classList.add("no-scroll");
     var first = modal.el.querySelector('[data-star="1"]'); if (first) first.focus();
   }
   function closeModal() {
     if (!modal.el) return;
     modal.el.hidden = true; modal.pid = null; document.body.classList.remove("no-scroll");
+    if (modal.lastFocus && !document.body.contains(modal.lastFocus) && modal.lastFocus.getAttribute) {
+      var again = document.querySelector('[data-review="' + modal.lastFocus.getAttribute("data-review") + '"]');
+      if (again) modal.lastFocus = again;
+    }
     if (modal.lastFocus && modal.lastFocus.focus) modal.lastFocus.focus();
   }
   document.addEventListener("click", function (e) {
@@ -415,7 +482,7 @@
         (item.area ? '<span class="tag tag--area">' + esc(item.area) + "</span>" : "") +
         '<span class="rec">추천 ' + (item.recommend || 1) + "명</span>" +
       "</div>" +
-      "<h3>" + esc(item.name) + "</h3>" +
+      '<h3><button type="button" class="item-title" data-review="' + esc(item.id) + '">' + esc(item.name) + "</button></h3>" +
       '<div class="social" data-stat="' + esc(item.id) + '">' + socialHTML(item.id) + "</div>" +
       (item.location ? '<p class="meta">📍 ' + esc(item.location) + "</p>" : "") +
       (item.price ? '<p class="meta"><b>가격</b> ' + esc(item.price) + "</p>" : "") +
@@ -515,11 +582,34 @@
     var m = S.mapIntro;
     if (state.sel.type === "bld") {
       var bd = m.buildings[state.sel.idx];
-      return { label: bd.name, code: bd.code, name: bd.name, alias: bd.alias, desc: "공식 캠퍼스 지도 건물 " + bd.code };
+      return { label: bd.name, code: bd.code, name: bd.name, alias: bd.alias, desc: (FL[bd.code] && FL[bd.code].name !== bd.name ? "공식 지도 표기: " + FL[bd.code].name : "충주캠퍼스 건물 " + bd.code) };
     }
     var p = m.pins[state.sel.idx];
     var match = m.buildings.filter(function (x) { return x.code === p.code; })[0];
     return { label: p.label, code: p.code, keyword: p.keyword, name: match ? match.name : "", alias: match ? match.alias : [], desc: p.desc };
+  }
+  /* ---------- 층 안내 (data/floors.js) ---------- */
+  var FL = window.FLOORS || {};
+  function floorSummary(code) {
+    var f = FL[code];
+    if (!f || !f.floors.length) return "";
+    var all = [];
+    f.floors.forEach(function (x) { all = all.concat(x.places); });
+    if (f.floors.length === 1 && all.length === 1 && all[0] === f.name) return f.floors[0].floor + "층";
+    return f.floors.length + "개 층 안내";
+  }
+  function floorsHTML(code) {
+    var f = FL[code];
+    if (!f || !f.floors.length) return "";
+    // 위층부터 아래로 (건물 단면처럼)
+    var rows = f.floors.slice().reverse().map(function (x) {
+      var only = x.places.length === 1 && x.places[0] === f.name;
+      return '<li><span class="fl-no">' + esc(x.floor) + '<small>층</small></span><div class="fl-places">' +
+        (only ? '<span class="fl-chip fl-chip--plain">건물 전체</span>' : x.places.map(function (p) { return '<span class="fl-chip' + (/식당|카페|Caffee|편의점|마트|북카페|음료/.test(p) ? " fl-chip--food" : /헬스|휘트니스|보건|농협|우편|복사|안경|열람|자료실|서점|상담/.test(p) ? " fl-chip--use" : "") + '">' + esc(p) + "</span>"; }).join("")) +
+        "</div></li>";
+    }).join("");
+    return '<section class="floors" aria-label="' + esc(f.name) + ' 층별 안내"><h3 class="panel-sub">층별 안내 <small>학교 공식 지도 기준</small></h3><ol class="fl-list">' + rows + "</ol>" +
+      '<p class="fl-legend"><span class="fl-chip fl-chip--food">먹을 곳</span><span class="fl-chip fl-chip--use">생활 시설</span><span class="fl-chip">학과·사무실</span></p></section>';
   }
   function bldIndex(code) {
     var bs = S.mapIntro.buildings;
@@ -535,17 +625,20 @@
       var right = lab.x > 70;
       pop = '<div class="cm-pop' + (right ? " cm-pop--left" : "") + '" style="left:' + lab.x + "%;top:" + lab.y + '%" role="status">' +
         "<b>" + esc(sel.code) + "</b><strong>" + esc(sel.label) + "</strong>" +
-        "<span>관련 정보 " + relCount + "건</span>" +
+        "<span>" + (floorSummary(sel.code) ? floorSummary(sel.code) + " · " : "") + "관련 정보 " + relCount + "건</span>" +
         '<a href="#map" class="text-btn" data-scroll="pinPanel">자세히 보기 ↓</a></div>';
     }
     return '<section class="campus-map" aria-label="캠퍼스 지도 그림">' +
       '<div class="cm-scroll"><div class="cm-stage">' +
         '<img src="' + esc(cm.image) + '" alt="한국교통대학교 충주캠퍼스 손그림 지도">' +
-        '<div class="cm-title"><p class="cm-tag">' + esc(cm.tag) + '</p><h1>' + esc(cm.title) + "</h1></div>" +
+        '<h1 class="sr-only">캠퍼스 지도</h1>' +
         cm.labels.map(function (l) {
           var i = bldIndex(l.code), bd = S.mapIntro.buildings[i];
           var on = sel.code === l.code;
-          return '<button type="button" class="cm-label' + (on ? " is-on" : "") + '" data-bld="' + i + '" style="left:' + l.x + "%;top:" + l.y + '%" aria-pressed="' + on + '" aria-label="' + esc(l.code + " " + (bd ? bd.name : "")) + '">' + esc(l.code) + "</button>";
+          // 그림에 그려진 번호 위에는 투명 버튼, 그림에 없는 번호는 라벨을 그려 넣어요
+          var cls = (l.drawn === false ? "cm-label" : "cm-hot") + (on ? " is-on" : "");
+          var size = l.drawn === false ? "" : "width:" + l.w + "%;height:" + l.h + "%;";
+          return '<button type="button" class="' + cls + '" data-bld="' + i + '" style="left:' + l.x + "%;top:" + l.y + "%;" + size + '" aria-pressed="' + on + '" aria-label="' + esc(l.code + " " + (bd ? bd.name : "")) + '">' + esc(l.code) + "</button>";
         }).join("") + pop +
       "</div></div>" +
       '<p class="cm-hint wrap">좌우로 밀어서 지도를 볼 수 있어요.</p>' +
@@ -572,7 +665,8 @@
           "</section>" +
         '<aside class="pin-panel" id="pinPanel" aria-live="polite"><h2>' + esc(sel.label) + (sel.code ? ' <small class="code">' + esc(sel.code) + "</small>" : "") + "</h2><p>" + esc(sel.desc) + "</p>" +
           (sel.code && !onMap && m.campusMap ? '<p class="hint" style="margin-top:6px">그림 지도에는 이 건물 표시가 없어요. 공식 지도에서 위치를 확인하세요.</p>' : "") +
-          (rel.length ? '<p class="hint" style="margin-top:12px">관련 정보 ' + rel.length + "건</p>" + '<ul class="pin-list">' + rel.slice(0, 12).map(function (r) {
+          floorsHTML(sel.code) +
+          (rel.length ? '<h3 class="panel-sub">근처 꿀팁·장소 <small>' + rel.length + "건</small></h3>" + '<ul class="pin-list">' + rel.slice(0, 12).map(function (r) {
             return "<li><b>" + esc(r.it.name) + "</b><small>" + SECTION_LABEL[r.sec] + " · " + esc(r.it.category) + (r.it.location ? " · " + esc(r.it.location) : "") + "</small>" +
               '<a class="text-btn" href="#' + r.sec + '" data-jump="' + r.sec + '" data-name="' + esc(r.it.name) + '">자세히 보기 →</a></li>';
           }).join("") + "</ul>" : '<p class="hint" style="margin-top:12px">아직 이 건물과 연결된 정보가 없어요.</p>') +
@@ -618,9 +712,18 @@
   }
   function noticeHTML() {
     return '<div class="wrap sub-page">' +
-      '<div class="page-head"><div class="crumb"><a href="#home">홈</a> › 공지사항</div><h1>공지사항</h1><p>제목을 누르면 내용이 펼쳐져요.</p></div>' +
+      '<div class="page-head"><div class="crumb"><a href="#home">홈</a> › 공지사항</div><h1>공지사항</h1>' +
+        "<p>학교 홈페이지에 올라온 공지 중 학생들이 꼭 알아야 할 것을 모았어요. 제목을 누르면 요약이 펼쳐져요.</p>" +
+        '<div class="toolbar">' + (S.noticeBoards || []).map(function (bd) {
+          return '<a class="text-btn" href="' + esc(bd.url) + '" target="_blank" rel="noopener">학교 ' + esc(bd.label) + " 전체 보기 ↗</a>";
+        }).join("") + "</div></div>" +
       '<div class="board">' + S.notices.map(function (n, i) {
-        return '<div class="board-row"><details' + (state.openNotice === i ? " open" : "") + "><summary>" + esc(n.title) + tmp(n.placeholder) + "</summary><p>" + esc(n.body) + "</p></details><small>" + esc(n.date) + "</small></div>";
+        return '<div class="board-row notice-row"><details' + (state.openNotice === i ? " open" : "") + "><summary>" +
+          (n.tag ? '<span class="tag tag--sub">' + esc(n.tag) + "</span> " : "") + esc(n.title) + tmp(n.placeholder) + "</summary>" +
+          '<div class="notice-body"><p class="meta">' + esc(n.dept || "") + " · " + esc(n.date) + "</p>" +
+          (n.points ? "<ul>" + n.points.map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") + "</ul>" : "<p>" + esc(n.body || "") + "</p>") +
+          (n.url ? '<a class="pill-btn" href="' + esc(n.url) + '" target="_blank" rel="noopener">학교 공지 원문 보기' + ICON.arrow + "</a>" : "") +
+          "</div></details><small>" + esc(n.date) + "</small></div>";
       }).join("") + "</div></div>";
   }
   function eventsHTML() {
@@ -653,13 +756,6 @@
     if (route === "home") {
       document.getElementById("heroSearch").addEventListener("submit", function (e) {
         e.preventDefault(); runSearch(document.getElementById("heroSearchInput").value);
-      });
-      app.querySelectorAll("[data-pop]").forEach(function (a) {
-        a.addEventListener("click", function () {
-          var it = S.popular.items[+a.dataset.pop];
-          var st = state.list[it.route];
-          if (st) { st.cat = it.filter || "전체"; st.sub = "전체"; st.area = "전체"; st.q = ""; if (it.sort) st.sort = it.sort; }
-        });
       });
       app.querySelectorAll("[data-notice]").forEach(function (a) {
         a.addEventListener("click", function () { state.openNotice = +a.dataset.notice; });
