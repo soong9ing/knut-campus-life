@@ -8,13 +8,13 @@
   var S = window.SITE || {};
   var P = window.PLACES || { food: [], tips: [], hidden: [], etc: [] };
   var app = document.getElementById("app");
-  var ROUTES = ["home", "map", "hidden", "food", "tips", "community", "etc", "notice", "events", "search"];
+  var ROUTES = ["home", "map", "hidden", "food", "tips", "community", "etc", "notice", "events", "search", "bus", "favorites"];
   var SECTION_LABEL = { food: "맛집", tips: "생활꿀팁", hidden: "숨은장소", etc: "자유" };
 
   // 화면별 필터 상태 (페이지 안에서만 기억)
   var state = {
     list: {
-      food: { cat: "전체", sub: "전체", area: "전체", q: "", sort: "recommend", open: {} },
+      food: { cat: "전체", sub: "전체", area: "전체", q: "", sort: "recommend", open: {}, openNow: false },
       tips: { cat: "전체", q: "", sort: "recommend", open: {} },
       hidden: { cat: "전체", q: "", sort: "recommend", open: {} },
       etc: { cat: "전체", q: "", sort: "recommend", open: {} }
@@ -57,6 +57,7 @@
     bowFill: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 10.5 4.5 5.2C3.4 4.5 2 5.3 2 6.6v10.8c0 1.3 1.4 2.1 2.5 1.4l7.5-5.3 7.5 5.3c1.1.7 2.5-.1 2.5-1.4V6.6c0-1.3-1.4-2.1-2.5-1.4z"/><circle cx="12" cy="12" r="2.4"/></svg>'
   };
   function arrowDot() { return '<span class="arrow-dot" aria-hidden="true">' + ICON.arrow + "</span>"; }
+  window.Toast = function (m) { toast(m); };
   function toast(msg) {
     var t = document.getElementById("toast");
     t.textContent = msg; t.hidden = false;
@@ -111,9 +112,12 @@
       e.preventDefault();
       runSearch(document.getElementById("navSearchInput").value);
     });
-    document.getElementById("userBtn").addEventListener("click", function () {
-      toast("로그인 기능은 준비 중이에요.");
-    });
+    // 사람 아이콘: 내가 저장한 장소(즐겨찾기)
+    var ub = document.getElementById("userBtn");
+    ub.setAttribute("aria-label", "내 장소 (저장한 곳)"); ub.title = "내 장소";
+    ub.addEventListener("click", function () { go("favorites"); });
+    var ft = document.querySelector(".footer-tools");
+    if (ft && window.Features) ft.insertAdjacentHTML("afterbegin", Features.installButtonHTML());
     document.getElementById("toTop").addEventListener("click", function () { window.scrollTo(0, 0); });
     document.getElementById("socials").addEventListener("click", function (e) {
       var a = e.target.closest("[data-social]");
@@ -172,6 +176,9 @@
             '<img class="map-mascot" src="' + esc(m.mascot) + '" alt="">' +
           "</div>" +
         "</section>" +
+
+        // 오늘의 캠퍼스: 다음 버스 · D-day · 오늘 뭐 먹지
+        (window.Features ? '<section class="fw-row" aria-label="오늘의 캠퍼스">' + Features.busWidgetHTML() + Features.ddayWidgetHTML() + Features.pickWidgetHTML() + "</section>" : "") +
 
         // ⑤ 인기 콘텐츠
         '<section class="popular" aria-labelledby="popTitle">' +
@@ -426,10 +433,12 @@
     modal.el.querySelector("#mTitle").textContent = place.it.name;
     var it = place.it, url = mapUrl(it), info = modal.el.querySelector("#mInfo");
     info.innerHTML =
+      (window.Features ? '<div class="modal-tools">' + Features.openBadgeHTML(it) + Features.favButtonHTML(it.id) + "</div>" : "") +
       (it.location ? '<p class="meta">📍 ' + esc(it.location) + "</p>" : "") +
       (it.price ? '<p class="meta"><b>가격</b> ' + esc(it.price) + "</p>" : "") +
       (it.note ? '<p class="note">' + linkify(it.note) + "</p>" : "") +
-      (url ? '<a class="map-link" href="' + esc(url) + '" target="_blank" rel="noopener">지도에서 보기 ↗</a>' : "");
+      (url ? '<a class="map-link" href="' + esc(url) + '" target="_blank" rel="noopener">지도에서 보기 ↗</a>' : "") +
+      (window.Features && Features.reportAvailable() ? Features.reportHTML(it.id) : "");
     fillForm(); renderModalList();
     if (window.Social) window.Social.recordView(pid);
     modal.el.hidden = false; document.body.classList.add("no-scroll");
@@ -447,6 +456,15 @@
   document.addEventListener("click", function (e) {
     var r = e.target.closest("[data-review]");
     if (r) { e.preventDefault(); openModal(r.dataset.review); return; }
+    var fv = e.target.closest("[data-fav]");
+    if (fv && window.Features) {
+      e.preventDefault();
+      var on = Features.toggleFav(fv.dataset.fav);
+      document.querySelectorAll('[data-fav="' + fv.dataset.fav + '"]').forEach(function (b) { b.outerHTML = Features.favButtonHTML(fv.dataset.fav); });
+      toast(on ? "내 장소에 저장했어요. 오른쪽 위 사람 아이콘에서 볼 수 있어요." : "내 장소에서 뺐어요.");
+      if (currentRoute() === "favorites" && !on) render(true);
+      return;
+    }
     var l = e.target.closest("[data-like]");
     if (l) {
       e.preventDefault();
@@ -482,8 +500,9 @@
         (item.area ? '<span class="tag tag--area">' + esc(item.area) + "</span>" : "") +
         '<span class="rec">추천 ' + (item.recommend || 1) + "명</span>" +
       "</div>" +
+      (window.Features ? Features.openBadgeHTML(item) : "") +
       '<h3><button type="button" class="item-title" data-review="' + esc(item.id) + '">' + esc(item.name) + "</button></h3>" +
-      '<div class="social" data-stat="' + esc(item.id) + '">' + socialHTML(item.id) + "</div>" +
+      '<div class="social-row"><div class="social" data-stat="' + esc(item.id) + '">' + socialHTML(item.id) + "</div>" + (window.Features ? Features.favButtonHTML(item.id) : "") + "</div>" +
       (item.location ? '<p class="meta">📍 ' + esc(item.location) + "</p>" : "") +
       (item.price ? '<p class="meta"><b>가격</b> ' + esc(item.price) + "</p>" : "") +
       (item.note ? '<p class="note' + (noteLong && !open ? " clamp" : "") + '">' + linkify(item.note) + "</p>" : "") +
@@ -500,6 +519,7 @@
       return (st.cat === "전체" || d.category === st.cat) &&
         (sec !== "food" || st.sub === "전체" || d.subcategory === st.sub) &&
         (sec !== "food" || st.area === "전체" || d.area === st.area) &&
+        (!st.openNow || !window.Features || (function (s) { return s && (s.state === "open" || s.state === "soon"); })(Features.openStatus(d))) &&
         matches(d, st.q);
     });
     pool = sortItems(pool, st.sort);
@@ -527,6 +547,7 @@
           '<label class="mini-search">' + ICON.search + '<span class="sr-only">이 목록에서 찾기</span><input id="listQ-' + sec + '" type="search" placeholder="이 목록에서 찾기" value="' + esc(st.q) + '" autocomplete="off"></label>' +
           (sec === "food" ? '<label class="sr-only" for="areaSel">위치</label><select class="select" id="areaSel"><option>전체</option>' +
             ["교내", "학교 주변 (대소원면)", "충주 시내·외곽"].map(function (a) { return "<option" + (st.area === a ? " selected" : "") + ">" + a + "</option>"; }).join("") + "</select>" : "") +
+          (sec === "food" && window.Features ? '<label class="check"><input type="checkbox" id="openNow"' + (st.openNow ? " checked" : "") + '> 지금 영업 중만 <small>(시간 정보 있는 곳)</small></label>' : "") +
           '<label class="sr-only" for="sortSel">정렬</label><select class="select" id="sortSel"><option value="recommend"' + (st.sort === "recommend" ? " selected" : "") + '>추천 많은 순</option><option value="likes"' + (st.sort === "likes" ? " selected" : "") + '>좋아요 많은 순</option><option value="rating"' + (st.sort === "rating" ? " selected" : "") + '>별점 높은 순</option><option value="name"' + (st.sort === "name" ? " selected" : "") + ">이름순</option></select>" +
         "</div>" +
       "</div>" +
@@ -551,6 +572,8 @@
     });
     var area = document.getElementById("areaSel");
     if (area) area.addEventListener("change", function () { st.area = area.value; render(true); });
+    var on = document.getElementById("openNow");
+    if (on) on.addEventListener("change", function () { st.openNow = on.checked; render(true); });
     document.getElementById("sortSel").addEventListener("change", function (e) { st.sort = e.target.value; render(true); });
     app.querySelectorAll("[data-toggle]").forEach(function (b) {
       b.addEventListener("click", function () { var i = b.dataset.toggle; st.open[i] = !st.open[i]; render(true); });
@@ -734,6 +757,16 @@
       }).join("") + "</div></div>";
   }
 
+  function favoritesHTML() {
+    var ids = window.Features ? Features.favIds() : [];
+    return '<div class="wrap sub-page">' +
+      '<div class="page-head"><div class="crumb"><a href="#home">홈</a> › 내 장소</div><h1>내 장소</h1>' +
+      "<p>☆ 저장을 누른 곳이 모여요. 이 기기의 이 브라우저에만 저장돼요." + (ids.length ? ' · <span class="count">' + ids.length + "곳</span>" : "") + "</p></div>" +
+      (ids.length ? '<div class="item-grid">' + ids.map(function (id) { var p = PLACE_BY_ID[id]; return itemHTML(p.it, p.sec, -1, false); }).join("") + "</div>"
+        : '<div class="empty">아직 저장한 곳이 없어요. 맛집·숨은장소·생활꿀팁에서 ☆ 저장을 눌러 보세요.<br><br><a class="pill-btn" href="#food">맛집 보러 가기' + ICON.arrow + "</a></div>") +
+      "</div>";
+  }
+
   /* ---------- 렌더링 ---------- */
   function render(keepScroll) {
     var route = currentRoute();
@@ -743,7 +776,9 @@
       : route === "search" ? searchHTML()
       : route === "community" ? communityHTML()
       : route === "notice" ? noticeHTML()
-      : route === "events" ? eventsHTML()
+      : route === "events" ? (window.Features ? Features.calendarPageHTML() : eventsHTML())
+      : route === "bus" && window.Features ? Features.busPageHTML()
+      : route === "favorites" ? favoritesHTML()
       : listHTML(route);
     app.innerHTML = html;
     document.querySelectorAll("[data-nav]").forEach(function (a) {
@@ -753,7 +788,24 @@
     if (keepScroll === true) window.scrollTo(0, y); else window.scrollTo(0, 0);
   }
   function bind(route) {
+    if (route === "home-bus") {  // 버스 위젯만 다시 그렸을 때
+      var bs2 = document.getElementById("fwBusSel");
+      if (bs2) bs2.addEventListener("change", function () {
+        Features.setBusRoute(bs2.value);
+        document.getElementById("fwBus").outerHTML = Features.busWidgetHTML(); bind("home-bus");
+        var a2 = document.getElementById("fwBusSel"); if (a2) a2.focus();
+      });
+      return;
+    }
     if (route === "home") {
+      var bs = document.getElementById("fwBusSel");
+      if (bs) bs.addEventListener("change", function () {
+        Features.setBusRoute(bs.value);
+        var box = document.getElementById("fwBus"); box.outerHTML = Features.busWidgetHTML(); bind("home-bus");
+        var again = document.getElementById("fwBusSel"); if (again) again.focus();
+      });
+      var po = document.getElementById("fwPickOpen");
+      if (po) po.addEventListener("click", function () { Features.openPicker(); });
       document.getElementById("heroSearch").addEventListener("submit", function (e) {
         e.preventDefault(); runSearch(document.getElementById("heroSearchInput").value);
       });
@@ -809,6 +861,11 @@
     }
   }
 
+  // 홈의 '다음 버스'를 1분마다 새로 계산해요
+  setInterval(function () {
+    var box = document.getElementById("fwBus");
+    if (box && window.Features && !box.contains(document.activeElement)) { box.outerHTML = Features.busWidgetHTML(); bind("home-bus"); }
+  }, 60000);
   initChrome();
   window.addEventListener("hashchange", function () { render(); });
   render(true);

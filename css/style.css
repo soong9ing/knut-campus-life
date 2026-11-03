@@ -136,7 +136,7 @@ input { font: inherit; }
    ② 히어로 — 단위 --u = 시안 1px (히어로 폭 1024 기준, 높이 341)
    ============================================================= */
 .hero { container-type: inline-size; position: relative; overflow: hidden; background: #e6f4fb; }
-.hero-stage { position: relative; aspect-ratio: 1024 / 341; --u: calc(100cqw / 1024); }
+.hero-stage { position: relative; aspect-ratio: 2172 / 724; --u: calc(100cqw / 1024); }
 .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .hero-content { position: absolute; inset: 0; }
 .hero-tag {
@@ -159,8 +159,8 @@ input { font: inherit; }
 }
 .hero-desc span { display: block; white-space: nowrap; }
 .hero-search {
-  position: absolute; left: calc(var(--u) * 110); top: calc(var(--u) * 243);
-  width: calc(var(--u) * 298); height: calc(var(--u) * 42);
+  position: absolute; left: calc(var(--u) * 114); top: calc(var(--u) * 236.5);
+  width: calc(var(--u) * 297); height: calc(var(--u) * 40);
   display: flex; align-items: center; gap: calc(var(--u) * 10);
   padding-left: calc(var(--u) * 15);
   background: var(--white); border: calc(var(--u) * 1.8) solid var(--title); border-radius: 999px;
@@ -597,6 +597,99 @@ body.no-scroll { overflow: hidden; }
 .notice-body ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; color: var(--ink); line-height: 1.6; }
 .notice-body .pill-btn { margin-top: 12px; height: 36px; font-size: 13.5px; padding: 0 18px; }
 .page-head .toolbar .text-btn + .text-btn { margin-left: 6px; }
+
+/* 오늘의 캠퍼스 (다음 버스 · D-day · 오늘 뭐 먹지) */
+.fw-row { margin-top: calc(var(--k) * 26); display: grid; grid-template-columns: 1.15fr 1.15fr 0.9fr; gap: calc(var(--k) * 12); }
+.fw-card { min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; background: var(--card); border: 1px solid var(--card-line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.fw-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fw-head h3 { margin: 0; font: 400 19px/1.2 var(--f-display); color: var(--title); }
+.fw-head .more-link { font-size: 12.5px; white-space: nowrap; }
+.fw-select { width: 100%; height: 34px; font-size: 13px; }
+.fw-big { margin: 2px 0 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font: 700 30px/1.1 var(--f-body); color: var(--ink); font-variant-numeric: tabular-nums; }
+.fw-wait { font-size: 14px; font-weight: 700; color: var(--title); background: #fdeef0; padding: 3px 10px; border-radius: 999px; }
+.fw-wait.is-soon { background: #f2b13c; color: var(--ink); }
+.fw-sub { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+.fw-pick { justify-content: space-between; background: #fff7ec; }
+.fw-pick-btn { align-self: flex-start; height: 40px; font-size: 14.5px; }
+.dday-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.dday-list li { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.dday-list li span { display: flex; flex-direction: column; min-width: 0; font-size: 14px; font-weight: 500; }
+.dday-list li small { font-size: 11.5px; color: var(--soft); font-weight: 400; }
+.dday-badge { flex: none; min-width: 62px; text-align: center; padding: 4px 8px; border-radius: 8px; background: var(--wine); color: var(--white); font: 700 13px/1.2 var(--f-body); font-variant-numeric: tabular-nums; }
+.dday--exam .dday-badge { background: #c2410c; }
+.dday--apply .dday-badge { background: #2b7a4b; }
+.dday--holiday .dday-badge { background: #2d5f7b; }
+
+/* 버스 시간표 화면 */
+.bus-group h2, .cal-month h2 { margin: 26px 0 10px; font: 400 22px/1.2 var(--f-display); color: var(--title); }
+.bus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.bus-card { min-width: 0; padding: 16px 18px; background: var(--paper); border: 1px solid var(--card-line); border-radius: 14px; box-shadow: var(--shadow); }
+.bus-card h3 { margin: 0; font: 700 16px/1.35 var(--f-body); }
+.bus-card .meta { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
+.bus-next { margin: 10px 0 0; font-size: 14px; color: var(--title); font-weight: 700; }
+.bus-next b { font-size: 22px; color: var(--ink); margin-right: 4px; font-variant-numeric: tabular-nums; }
+.bus-times { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px; }
+.bus-times li { padding: 3px 8px; border-radius: 7px; background: #f4eee6; font-size: 13px; font-variant-numeric: tabular-nums; }
+.bus-times li small { color: var(--title); font-weight: 700; }
+.bus-times li.is-past { color: var(--soft); text-decoration: line-through; background: transparent; }
+.bus-times li.is-next { background: var(--wine); color: var(--white); font-weight: 700; }
+.bus-times li.is-next small { color: var(--white); }
+.bus-card .hint { margin-top: 8px; }
+
+/* 학사일정 화면 */
+.cal-list { list-style: none; margin: 0; padding: 0; background: var(--paper); border: 1px solid var(--card-line); border-radius: 14px; overflow: hidden; }
+.cal-list li { display: flex; align-items: center; gap: 10px; padding: 11px 16px; flex-wrap: wrap; }
+.cal-list li + li { border-top: 1px solid var(--card-line); }
+.cal-list li.is-done { opacity: 0.55; }
+.cal-date { min-width: 110px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cal-list b { flex: 1; min-width: 0; font-weight: 500; font-size: 14.5px; }
+.cal-dd { font-weight: 700; color: var(--title); font-variant-numeric: tabular-nums; }
+
+/* 즐겨찾기 · 영업 상태 */
+.social-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fav-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--card-line); background: var(--white); font-size: 13px; color: var(--ink); }
+.fav-btn svg { width: 16px; height: 16px; fill: none; stroke: #d9962a; stroke-width: 2; stroke-linejoin: round; }
+.fav-btn[aria-pressed="true"] { background: #fff4dc; border-color: #f2b13c; font-weight: 700; }
+.fav-btn[aria-pressed="true"] svg { fill: #f2b13c; }
+.fav-btn:hover { border-color: #d9962a; }
+.open-badge { align-self: flex-start; justify-self: start; display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.open-badge--open { background: #def4e5; color: #1f6b3a; }
+.open-badge--soon { background: #fff1cc; color: #8a5a00; }
+.open-badge--break { background: #fff1cc; color: #8a5a00; }
+.open-badge--closed { background: #eee8e3; color: #6e6567; }
+.check { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--ink); }
+.check small { color: var(--soft); }
+.modal-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* 오늘 뭐 먹지 창 */
+.pick-card h2 { margin: 0 40px 12px 0; }
+.pick-opts { display: grid; gap: 10px; }
+.pick-row { display: grid; gap: 6px; }
+.pick-row > span { font-size: 13px; font-weight: 700; color: var(--muted); }
+.pick-row .chip { height: 30px; font-size: 13px; }
+.pick-result:not(:empty) { margin-top: 14px; }
+.pick-hit { padding: 16px 18px; background: var(--white); border: 2px solid var(--wine); border-radius: 14px; display: grid; gap: 6px; animation: pop 0.25s ease-out; }
+.pick-hit h3 { margin: 0; font: 400 26px/1.2 var(--f-display); color: var(--title); }
+.pick-meta { margin: 0; font-size: 12.5px; color: var(--muted); }
+.pick-note { margin: 0; font-size: 13.5px; color: var(--ink); }
+.pick-card .rf-row { margin-top: 14px; }
+.pick-card .pill-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+@keyframes pop { from { transform: scale(0.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* 정보 수정 요청 */
+.report { margin-top: 4px; }
+.report summary { cursor: pointer; font-size: 12.5px; color: var(--muted); }
+.report summary:hover { color: var(--title); }
+.report-form { margin-top: 8px; display: grid; gap: 8px; }
+.report-form textarea { width: 100%; resize: vertical; padding: 8px 10px; border: 1.5px solid var(--card-line); border-radius: 10px; font: 13.5px/1.5 var(--f-body); background: var(--cream); color: var(--ink); }
+.report-form .pill-btn { height: 34px; font-size: 13px; padding: 0 16px; margin-left: auto; }
+
+/* 홈 화면에 추가 */
+.install-btn { height: 34px; padding: 0 14px; border-radius: 999px; border: 1.5px solid rgba(255, 255, 255, 0.8); color: var(--white); font-size: 13px; font-weight: 700; }
+.install-btn:hover { background: rgba(255, 255, 255, 0.12); }
+
+@media (max-width: 960px) { .fw-row { grid-template-columns: 1fr 1fr; } .fw-pick { grid-column: 1 / -1; } }
+@media (max-width: 640px) { .fw-row { grid-template-columns: 1fr; } .footer-tools { flex-wrap: wrap; } }
 
 /* 챗봇 */
 .chatbot { position: fixed; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 75; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
