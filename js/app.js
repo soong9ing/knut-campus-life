@@ -162,17 +162,11 @@
           }).join("") +
         "</section>" +
 
-        // ④ 캠퍼스 지도 소개
-        '<section class="map-intro" aria-label="캠퍼스 지도 소개">' +
-          mapFigureHTML(false) +
-          '<div class="map-text">' +
-            '<p class="hand-note">' + esc(m.note) + "</p>" +
-            "<h2>" + esc(m.title) + "</h2>" +
-            '<p class="lead">' + lines(m.descLines) + "</p>" +
-            '<a class="pill-btn" href="#map">' + esc(m.button) + ICON.arrow + "</a>" +
-            '<p class="side-note" aria-hidden="true">' + lines(m.sideNote) + "</p>" +
-            '<img class="map-mascot" src="' + esc(m.mascot) + '" alt="">' +
-          "</div>" +
+        // ④ 지도 카드 · 공지사항 · 배너 (시안 아래 줄)
+        '<section class="bottom-row bottom-row--three" aria-label="캠퍼스 지도와 공지">' +
+          '<a class="map-card" href="#map"><img src="' + esc(m.card) + '" alt=""><span class="sr-only">한눈에 보는 캠퍼스 지도 · 지도 바로가기</span></a>' +
+          noticeCardHTML() +
+          (b ? '<a class="banner" href="#' + b.route + '"><img src="' + esc(b.image) + '" alt=""><span class="sr-only">' + esc(b.lines.join(" ")) + " · " + esc(b.button) + "</span></a>" : "") +
         "</section>" +
 
         // 오늘의 캠퍼스: 다음 버스 · D-day · 오늘 뭐 먹지
@@ -188,27 +182,20 @@
           '<p class="pop-hint" id="popHint">' + esc(popularHint()) + "</p>" +
         "</section>" +
 
-        // ⑥ 공지 + 배너
-        '<section class="bottom-row' + (b ? "" : " bottom-row--single") + '">' +
-          '<div class="notice-card">' +
-            '<div class="notice-head"><h2><img src="assets/img/icon-megaphone.png" alt="">공지사항</h2>' +
-              '<a class="more-link" href="#notice">전체보기' + ICON.arrow + "</a></div>" +
-            '<ul class="notice-list">' +
-              S.notices.slice(0, 3).map(function (n, i) {
-                return '<li><a href="#notice" data-notice="' + i + '"><span>' + (n.tag ? '<b class="notice-tag">[' + esc(n.tag) + "]</b> " : "") + esc(n.title) + "</span><time>" + esc(n.date) + "</time></a></li>";
-              }).join("") +
-            "</ul>" +
-          "</div>" +
-          // 배너: data/site.js의 banner를 null로 두면 표시하지 않아요
-          (b ? '<div class="banner">' +
-            '<img src="' + esc(b.image) + '" alt="">' +
-            '<p class="sr-only">' + esc(b.lines.join(" ")) + "</p>" +
-            '<a class="banner-btn" href="#' + b.route + '"><span class="sr-only">' + esc(b.button) + "</span></a>" +
-          "</div>" : "") +
-        "</section>" +
       "</div>" +
       '<div class="page-end" aria-hidden="true"></div>'
     );
+  }
+  function noticeCardHTML() {
+    return '<div class="notice-card">' +
+      '<div class="notice-head"><h2><img src="assets/img/icon-megaphone.png" alt="">공지사항</h2>' +
+        '<a class="more-link" href="#notice">전체보기' + ICON.arrow + "</a></div>" +
+      '<ul class="notice-list">' +
+        S.notices.slice(0, 3).map(function (n, i) {
+          return '<li><a href="#notice" data-notice="' + i + '"><span>' + (n.tag ? '<b class="notice-tag">[' + esc(n.tag) + "]</b> " : "") + esc(n.title) + "</span><time>" + esc(n.date) + "</time></a></li>";
+        }).join("") +
+      "</ul>" +
+    "</div>";
   }
   function mapFigureHTML(interactive) {
     var m = S.mapIntro;

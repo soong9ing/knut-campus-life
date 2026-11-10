@@ -51,6 +51,7 @@ window.SITE = {
 
   mapIntro: {
     image: "assets/img/map-illust.jpg",
+    card: "assets/img/map-card.jpg",  // 홈 화면 "한눈에 보는 캠퍼스 지도" 카드 그림
     ribbon: ["한눈에 보는", "캠퍼스 지도"],
     note: "처음 가도 괜찮아!",
     title: "캠퍼스 지도",
@@ -192,7 +193,8 @@ window.SITE = {
     { cat: "정보", title: "시험기간 도서관 3층 자리 없으면 5층 강의실 가세요", meta: "익명 · 예시 글", placeholder: true }
   ],
 
-  banner: null,  // 홈 하단 배너 (없앰). 다시 쓰려면 { image, lines, button, route }를 넣어 주세요.
+  // 홈 지도 카드 옆 배너. 없애려면 null로 바꾸면 돼요.
+  banner: { image: "assets/img/banner-campus.jpg", lines: ["오늘도, 좋은 하루", "한국교통대학교에서!"], button: "캠퍼스 둘러보기", route: "hidden" },
 
   footer: {
     lines: ["더 넓은 세상으로", "함께 가는 한국교통대학교"],
