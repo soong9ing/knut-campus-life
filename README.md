@@ -16,6 +16,7 @@
 | 맛집·생활꿀팁·숨은장소·자유 정보 | `data/places.js` (`id`는 후기·즐겨찾기와 연결되니 바꾸지 마세요) |
 | 건물 층별 안내 | `data/floors.js` |
 | 그림 | `assets/img/` 같은 이름으로 덮어쓰기 |
+| 홈 맨 위 계절 배경 (봄 3~5월·여름 6~8월·가을 9~11월·겨울 12~2월 자동) | `assets/img/hero-spring.jpg` · `hero-summer.jpg` · `hero-autumn.jpg` · `hero-winter.jpg` (주소 끝 `?season=winter`로 미리보기) |
 | 색·크기 | `css/style.css` 맨 위 `:root` |
 
 ## 기능과 동작하는 곳

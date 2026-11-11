@@ -190,19 +190,19 @@
       // ② 히어로
       '<section class="hero" aria-label="소개">' +
         '<div class="hero-stage">' +
-          // 휴대폰(760px 이하)에서는 그림 속 검색창을 지운 그림을 보여 줘요
-          '<picture><source media="(max-width: 760px)" srcset="assets/img/hero-campus-m.jpg">' +
-          '<img class="hero-bg" src="' + esc(h.image) + '" alt="손그림 캠퍼스 풍경 일러스트"></picture>' +
-          '<div class="hero-content">' +
-            // 제목·소개 글씨는 그림에 그려져 있어요. 아래 글자는 검색·화면읽기용으로만 숨겨 둬요.
-            '<div class="sr-only"><p>' + esc(h.tag) + "</p>" +
-            "<h1>" + esc(h.titleLines.join(" ")) + "</h1>" +
-            "<p>" + esc(h.descLines.join(" ")) + "</p></div>" +
+          // 계절 배경 그림 (봄·여름·가을·겨울이 저절로 바뀜, data/site.js의 hero.seasons)
+          '<img class="hero-bg hero-bg--' + heroSeason() + '" src="' + esc(heroImage()) + '" alt="' + esc(SEASON_LABEL[heroSeason()]) + ' 교통대 정문 일러스트">' +
+          '<div class="hero-content hero-content--text">' +
+            '<div class="hero-card">' +
+              '<p class="hero-tag">' + esc(h.tag) + ' <span aria-hidden="true">♡</span></p>' +
+              '<h1 class="hero-title">' + h.titleLines.map(function (t) { return "<span>" + esc(t) + "</span>"; }).join("") + "</h1>" +
+              '<p class="hero-desc">' + h.descLines.map(function (t) { return "<span>" + esc(t) + "</span>"; }).join("") + "</p>" +
             '<form class="hero-search" id="heroSearch" role="search">' + ICON.search +
               '<label class="sr-only" for="heroSearchInput">정보 검색</label>' +
               '<input id="heroSearchInput" type="search" autocomplete="off" placeholder="' + esc(h.searchPlaceholder) + '">' +
               '<button type="submit" aria-label="검색">' + ICON.search + "</button>" +
             "</form>" +
+            "</div>" +
           "</div>" +
         "</div>" +
       "</section>" +
@@ -220,15 +220,9 @@
           '<a class="menu-card menu-card--pick" href="#bus"><img src="assets/img/menu-bus.svg" alt=""><h3>교내 버스</h3><p><span>999·700번</span><span>실시간 도착 보기</span></p>' + arrowDot() + '</a>' +
         "</section>" +
 
-        // ④ 지도 카드 · 공지사항 · 배너 (시안 아래 줄)
-        '<section class="bottom-row bottom-row--three" aria-label="캠퍼스 지도와 공지">' +
-          '<a class="map-card" href="#map"><img src="' + esc(m.card) + '" alt=""><span class="sr-only">한눈에 보는 캠퍼스 지도 · 지도 바로가기</span></a>' +
-          noticeCardHTML() +
-          (b ? '<a class="banner" href="#' + b.route + '"><img src="' + esc(b.image) + '" alt=""><span class="sr-only">' + esc(b.lines.join(" ")) + " · " + esc(b.button) + "</span></a>" : "") +
-        "</section>" +
-
-        // 오늘의 캠퍼스: 교내 버스(지도·실시간) · D-day · 오늘 뭐 먹지
-        (window.Features ? '<section class="fw-row" aria-label="오늘의 캠퍼스">' + Features.busWidgetHTML() + Features.ddayWidgetHTML() + Features.pickWidgetHTML() + "</section>" : "") +
+        // 오늘의 캠퍼스: 학사일정 D-day · 교내 버스(지도·실시간) · 오늘 뭐 먹지
+        // (지도 카드·공지사항·배너 줄은 위 메뉴 카드와 겹쳐서 뺐어요. 공지사항은 '공지사항' 화면(#notice)에 그대로 있어요.)
+        (window.Features ? '<section class="fw-row" aria-label="오늘의 캠퍼스">' + Features.ddayWidgetHTML() + Features.busWidgetHTML() + Features.pickWidgetHTML() + "</section>" : "") +
 
         // ⑤ 인기 콘텐츠
         '<section class="popular" aria-labelledby="popTitle">' +
@@ -243,6 +237,18 @@
       "</div>" +
       '<div class="page-end" aria-hidden="true"></div>'
     );
+  }
+  /* ---------- 계절 배경: 방문자 기기의 오늘 날짜로 봄·여름·가을·겨울을 골라요 ---------- */
+  var SEASON_LABEL = { spring: "봄", summer: "여름", autumn: "가을", winter: "겨울" };
+  function heroSeason() {
+    var q = (location.search.match(/[?&]season=(spring|summer|autumn|winter)/) || [])[1];
+    if (q) return q;  // 미리보기용: 주소 끝에 ?season=winter
+    var m = new Date().getMonth() + 1;
+    return m >= 3 && m <= 5 ? "spring" : m >= 6 && m <= 8 ? "summer" : m >= 9 && m <= 11 ? "autumn" : "winter";
+  }
+  function heroImage() {
+    var s = S.hero.seasons || {};
+    return s[heroSeason()] || S.hero.image;
   }
   function noticeCardHTML() {
     return '<div class="notice-card">' +
@@ -715,12 +721,22 @@
     var m = S.mapIntro, sel = selected(), rel = related(sel);
     var zones = [["E", "E 구역"], ["W", "W 구역"]];
     var onMap = m.campusMap && m.campusMap.labels.some(function (l) { return l.code === sel.code; });
-    return campusMapHTML(sel, rel.length) +
-      '<div class="wrap sub-page map-sub">' +
+    // 왼쪽: 그림 지도 + 선택한 건물 정보 / 오른쪽: 건물 목록 (휴대폰에서는 지도 → 정보 → 목록 순서)
+    return '<div class="wrap sub-page map-sub">' +
+      '<div class="page-head map-head"><div class="crumb"><a href="#home">홈</a> › 캠퍼스 지도</div></div>' +
       '<div class="toolbar"><a class="pill-btn" href="' + esc(m.officialMap) + '" target="_blank" rel="noopener">학교 공식 캠퍼스 지도' + ICON.arrow + "</a>" +
         '<a class="text-btn" href="' + esc(m.naverMap) + '" target="_blank" rel="noopener">네이버 지도에서 보기 ↗</a>' +
         '<span class="hint">' + esc((m.campusMap && m.campusMap.descLines ? m.campusMap.descLines.join(" ") + " " : "")) + '그림 지도는 실제 축척과 달라요. 정확한 위치는 공식 지도에서 확인하세요.</span></div>' +
-      '<div class="map-page">' +
+      '<div class="map-page map-page--side">' +
+        '<div class="map-main">' + campusMapHTML(sel, rel.length) +
+        '<aside class="pin-panel" id="pinPanel" aria-live="polite"><h2>' + esc(sel.label) + (sel.code ? ' <small class="code">' + esc(sel.code) + "</small>" : "") + "</h2><p>" + esc(sel.desc) + "</p>" +
+          (sel.code && !onMap && m.campusMap ? '<p class="hint" style="margin-top:6px">그림 지도에는 이 건물 표시가 없어요. 공식 지도에서 위치를 확인하세요.</p>' : "") +
+          floorsHTML(sel.code) +
+          (rel.length ? '<h3 class="panel-sub">근처 꿀팁·장소 <small>' + rel.length + "건</small></h3>" + '<ul class="pin-list">' + rel.slice(0, 12).map(function (r) {
+            return "<li><b>" + esc(r.it.name) + "</b><small>" + SECTION_LABEL[r.sec] + " · " + esc(r.it.category) + (r.it.location ? " · " + esc(r.it.location) : "") + "</small>" +
+              '<a class="text-btn" href="#' + r.sec + '" data-jump="' + r.sec + '" data-name="' + esc(r.it.name) + '">자세히 보기 →</a></li>';
+          }).join("") + "</ul>" : '<p class="hint" style="margin-top:12px">아직 이 건물과 연결된 정보가 없어요.</p>') +
+        "</aside></div>" +
           '<section class="bld-dir" aria-label="건물 목록"><h2>건물 목록 <small>충주캠퍼스 · 공식 지도 기준</small></h2>' +
             zones.map(function (z) {
               return '<h3>' + z[1] + '</h3><div class="bld-grid">' + m.buildings.map(function (bd, i) {
@@ -730,14 +746,6 @@
               }).join("") + "</div>";
             }).join("") +
           "</section>" +
-        '<aside class="pin-panel" id="pinPanel" aria-live="polite"><h2>' + esc(sel.label) + (sel.code ? ' <small class="code">' + esc(sel.code) + "</small>" : "") + "</h2><p>" + esc(sel.desc) + "</p>" +
-          (sel.code && !onMap && m.campusMap ? '<p class="hint" style="margin-top:6px">그림 지도에는 이 건물 표시가 없어요. 공식 지도에서 위치를 확인하세요.</p>' : "") +
-          floorsHTML(sel.code) +
-          (rel.length ? '<h3 class="panel-sub">근처 꿀팁·장소 <small>' + rel.length + "건</small></h3>" + '<ul class="pin-list">' + rel.slice(0, 12).map(function (r) {
-            return "<li><b>" + esc(r.it.name) + "</b><small>" + SECTION_LABEL[r.sec] + " · " + esc(r.it.category) + (r.it.location ? " · " + esc(r.it.location) : "") + "</small>" +
-              '<a class="text-btn" href="#' + r.sec + '" data-jump="' + r.sec + '" data-name="' + esc(r.it.name) + '">자세히 보기 →</a></li>';
-          }).join("") + "</ul>" : '<p class="hint" style="margin-top:12px">아직 이 건물과 연결된 정보가 없어요.</p>') +
-        "</aside>" +
       "</div></div>";
   }
 

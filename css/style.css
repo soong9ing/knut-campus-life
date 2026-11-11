@@ -1102,3 +1102,86 @@ a.fw-bus:hover, a.fw-bus:focus-visible { border-color: var(--wine); transform: t
   .pop-cards .pop-card:last-child { grid-column: auto; }
   .pop-hint { display: none; }
 }
+.cal-note { flex-basis: 100%; margin: 0; padding-left: 2px; font-size: 13px; color: var(--muted, #7d6d70); line-height: 1.5; }
+.cal-note a { color: var(--title); font-weight: 700; white-space: nowrap; }
+
+/* 2026-11-11: 넓은 화면에서는 위쪽 작은 검색창을 숨기고 그림 속 큰 검색창만 써요.
+   휴대폰(760px 이하)은 그림 검색창이 없어서 위쪽 검색창을 그대로 보여 줘요. */
+@media (min-width: 761px) { .nav-search { display: none !important; } }
+
+/* 홈 '실시간 버스' 칸: 학사일정·오늘 뭐 먹지 칸과 같은 모양 (2026-11-11) */
+.fw-bus .bus-mini { margin-top: 2px; }
+.bus-no { min-width: 52px; }
+.bus-no--999 { background: var(--wine); }
+.bus-no--700 { background: #2d5f7b; }
+.fw-bus-btn { align-self: flex-start; margin-top: auto; height: 40px; font-size: 14.5px; text-decoration: none; }
+
+/* =============================================================
+   계절 배경 히어로 (2026-11-11): 그림에는 글씨가 없어서 제목·소개·검색을 화면에서 그려요.
+   예전 시안처럼 왼쪽 하늘 자리에 하얀 구름 말풍선을 띄우고 그 안에 글씨와 검색창을 넣어요.
+   ============================================================= */
+.hero-stage { aspect-ratio: 2172 / 724; }
+.hero-bg { object-position: center top; }
+.hero-content--text { display: flex; align-items: center; padding-left: calc(var(--u) * 46); }
+.hero-card {
+  position: relative; width: calc(var(--u) * 352);
+  padding: calc(var(--u) * 22) calc(var(--u) * 26) calc(var(--u) * 24);
+  background: rgba(255, 253, 248, 0.86);
+  border-radius: calc(var(--u) * 60) calc(var(--u) * 70) calc(var(--u) * 56) calc(var(--u) * 64);
+  box-shadow: 0 calc(var(--u) * 8) calc(var(--u) * 26) rgba(80, 60, 40, 0.14);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
+/* 구름처럼 보이게 위쪽에 둥근 혹 두 개 */
+.hero-card::before, .hero-card::after {
+  content: ""; position: absolute; z-index: -1; border-radius: 50%; background: inherit;
+}
+.hero-card::before { width: calc(var(--u) * 120); height: calc(var(--u) * 80); left: calc(var(--u) * 40); top: calc(var(--u) * -26); }
+.hero-card::after { width: calc(var(--u) * 100); height: calc(var(--u) * 70); left: calc(var(--u) * 150); top: calc(var(--u) * -18); }
+.hero-card .hero-tag, .hero-card .hero-title, .hero-card .hero-desc { position: static; transform: rotate(-3deg); transform-origin: left center; }
+.hero-card .hero-tag { font: 700 calc(var(--u) * 20) / 1.2 var(--f-hand); color: var(--nav-ink); margin: 0 0 calc(var(--u) * 4); }
+.hero-card .hero-tag span { color: var(--wine); }
+.hero-card .hero-title { font: 400 calc(var(--u) * 38) / 1.18 var(--f-display); color: var(--title); margin: 0; letter-spacing: -0.01em; }
+.hero-card .hero-title span + span { margin-left: calc(var(--u) * 14); }
+.hero-card .hero-desc { font: 700 calc(var(--u) * 13) / 1.6 var(--f-body); color: var(--ink); margin: calc(var(--u) * 10) 0 0; }
+.hero-card .hero-desc span { display: block; }
+.hero-card .hero-search {
+  position: relative; left: auto; top: auto; width: 100%; height: calc(var(--u) * 38);
+  margin-top: calc(var(--u) * 16);
+}
+.hero-card .hero-search input { font-size: calc(var(--u) * 12.5); }
+
+/* =============================================================
+   캠퍼스 지도 화면 (2026-11-11): 왼쪽 건물 목록 · 오른쪽 지도(+선택한 건물 정보)
+   ============================================================= */
+.map-head { padding-top: 0; }
+.map-page--side { grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); align-items: start; }
+.map-page--side .bld-dir { position: sticky; top: 90px; max-height: calc(100vh - 110px); overflow-y: auto; scrollbar-width: thin; padding: 16px 16px 18px; }
+.map-page--side .bld-dir h2 { font-size: 20px; }
+.map-page--side .bld-grid { grid-template-columns: 1fr 1fr; }
+.map-page--side .bld { font-size: 12.5px; min-height: 34px; padding: 5px 8px; }
+.map-page--side .bld b { min-width: 32px; }
+.map-main { min-width: 0; display: grid; gap: 14px; }
+.map-main .campus-map { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--card-line); box-shadow: var(--shadow); }
+.map-main .cm-stage { min-width: 560px; }
+.map-main .pin-panel { position: static; max-height: none; overflow: visible; }
+@media (max-width: 900px) {
+  .map-page--side { grid-template-columns: 1fr; }
+  .map-page--side .map-main { order: -1; }
+  .map-page--side .bld-dir { position: static; max-height: none; }
+  .map-page--side .bld-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+/* 지도 왼쪽 · 건물 목록 오른쪽 */
+.map-page--side { grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); }
+@media (max-width: 900px) {
+  .map-page--side { grid-template-columns: 1fr; }
+  /* 휴대폰: 지도를 화면 너비에 맞게 줄여서 한 번에 보이게 (좌우로 밀 필요 없음) */
+  .map-main .cm-stage { min-width: 0; }
+  .map-main .cm-scroll { overflow: visible; }
+  .map-main .cm-hint { display: none; }
+  .map-main .cm-hot.is-on, .map-main .cm-label.is-on { box-shadow: 0 0 0 2px var(--white), 0 2px 6px rgba(60, 10, 20, 0.35); }
+  .map-main .cm-pop { min-width: 0; max-width: 46%; padding: 6px 9px; border-radius: 8px; font-size: 11px; gap: 1px; }
+}
+@media (max-width: 900px) {
+  .map-main .cm-pop { font-size: 10px; max-width: 40%; }
+  .map-main .cm-pop strong { font-size: 1.3em; }
+}

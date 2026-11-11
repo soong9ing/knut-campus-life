@@ -289,10 +289,15 @@
   }
 
   function busWidgetHTML() {
-    return '<a class="fw-card fw-bus" id="fwBus" href="#bus" aria-label="실시간 버스 지도 열기">' +
-      '<span class="fw-bus-map" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.3"/></svg>실시간 버스 지도</span>' +
-      '<p class="fw-sub">충주캠퍼스 정류장을 지도에서 눌러 보세요. 버스가 몇 정거장 전인지, 몇 분 뒤 오는지 바로 보여요.</p>' +
-    "</a>";
+    // 다른 칸(학사일정 D-day · 오늘 뭐 먹지)과 같은 모양: 제목 줄 + 목록 + 버튼
+    return '<div class="fw-card fw-bus" id="fwBus">' +
+      '<div class="fw-head"><h3>🚌 실시간 버스</h3><a class="more-link" href="#bus">지도 보기 →</a></div>' +
+      '<ul class="dday-list bus-mini">' +
+        '<li><b class="dday-badge bus-no bus-no--999">999</b><span>교통대 ↔ 충주역·터미널<small>평일·학기 중 운행</small></span></li>' +
+        '<li><b class="dday-badge bus-no bus-no--700">700</b><span>대학순환 (건국대·호암지구·터미널)<small>평일·학기 중 운행</small></span></li>' +
+      "</ul>" +
+      '<a class="pill-btn fw-bus-btn" href="#bus">정류장 도착 정보 보기 📍</a>' +
+    "</div>";
   }
   function busPageHTML() {
     return '<div class="wrap sub-page">' +
@@ -402,7 +407,8 @@
         return '<section class="cal-month"><h2>' + esc(k.replace("-", "년 ") + "월") + '</h2><ul class="cal-list">' + months[k].map(function (e) {
           var done = e.end < today;
           return '<li class="dday--' + e.type + (done ? " is-done" : "") + '"><span class="cal-date">' + esc(range(e)) + '</span><span class="tag tag--sub">' + esc(TYPE[e.type] || "기타") + "</span><b>" + esc(e.title) + "</b>" +
-            (done ? '<small class="cal-dd">지남</small>' : '<small class="cal-dd">' + esc(ddayLabel(e, today)) + "</small>") + "</li>";
+            (done ? '<small class="cal-dd">지남</small>' : '<small class="cal-dd">' + esc(ddayLabel(e, today)) + "</small>") +
+            (e.note || e.url ? '<p class="cal-note">' + (e.note ? esc(e.note) : "") + (e.url ? ' <a href="' + esc(e.url) + '" target="_blank" rel="noopener">공지 보기 ↗</a>' : "") + "</p>" : "") + "</li>";
         }).join("") + "</ul></section>";
       }).join("") + "</div>";
   }

@@ -35,6 +35,15 @@ window.SITE = {
 
   hero: {
     image: "assets/img/hero-campus.jpg",
+    // 계절마다 홈 맨 위 배경 그림이 저절로 바뀌어요 (방문자 기기의 오늘 날짜 기준).
+    //  봄 3~5월 · 여름 6~8월 · 가을 9~11월 · 겨울 12~2월. 그림을 바꾸려면 같은 이름으로 덮어쓰기.
+    //  주소 끝에 ?season=winter 처럼 붙이면 다른 계절 배경을 미리 볼 수 있어요.
+    seasons: {
+      spring: "assets/img/hero-spring.jpg",
+      summer: "assets/img/hero-summer.jpg",
+      autumn: "assets/img/hero-autumn.jpg",
+      winter: "assets/img/hero-winter.jpg"
+    },
     tag: "함께라서 더 특별한",
     titleLines: ["한국교통대학교", "캠퍼스 라이프"],
     descLines: ["캠퍼스 지도부터 맛집, 숨은장소, 생활꿀팁까지!", "한국교통대학교의 모든 캠퍼스 생활 정보를 한 곳에서!"],
