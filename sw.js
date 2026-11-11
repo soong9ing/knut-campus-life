@@ -1,6 +1,6 @@
 /* 오프라인용 캐시: 한 번 연 화면과 정보는 인터넷이 약해도 보여요.
    파일을 고친 뒤에는 VERSION 숫자를 올려 주세요. (그래야 새 파일로 바뀌어요) */
-var VERSION = "campus-life-v24";
+var VERSION = "campus-life-v30";
 var CORE = ["./", "./index.html", "./manifest.webmanifest",
   "./css/style.css", "./js/social.js", "./js/features.js", "./js/app.js", "./js/chat.js",
   "./data/site.js", "./data/places.js", "./data/floors.js", "./data/notices.js", "./data/bus.js", "./data/calendar.js",

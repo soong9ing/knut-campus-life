@@ -7,7 +7,7 @@
  *  - route               → 눌렀을 때 이동할 화면 (home, map, hidden, food, tips, community, etc, notice, events(학사일정), search, bus(교내 버스 실시간 정류장), favorites(내 장소))
  */
 window.SITE = {
-  name: "한국교통대학교 캠퍼스 라이프",
+  name: "교통정리; 교통대 생활, 선배들이 정리 해드림",
 
   // 정보 수정 요청(제보)을 받을 구글 폼 주소. claude.ai 게시 페이지에서는 사이트 저장소에 모이고,
   // GitHub 사이트에서는 이 주소가 있을 때만 제보 버튼이 보여요. {place}, {text}를 넣으면 미리 채워져요.
@@ -44,10 +44,11 @@ window.SITE = {
       autumn: "assets/img/hero-autumn.jpg",
       winter: "assets/img/hero-winter.jpg"
     },
-    tag: "함께라서 더 특별한",
-    titleLines: ["한국교통대학교", "캠퍼스 라이프"],
-    descLines: ["캠퍼스 지도부터 맛집, 숨은장소, 생활꿀팁까지!", "한국교통대학교의 모든 캠퍼스 생활 정보를 한 곳에서!"],
-    searchPlaceholder: "원하는 정보를 검색해보세요!"
+    badge: "한국교통대학교 캠퍼스 생활 플랫폼",
+    tag: "교통대 생활, 선배들이 정리 해드림",
+    titleLines: ["교통정리"],
+    descLines: ["교통대 생활, 선배들이 정리 해드림"],
+    searchPlaceholder: "캠퍼스, 맛집, 꿀팁 등 궁금한 정보를 검색해보세요!"
   },
 
   menuCards: [

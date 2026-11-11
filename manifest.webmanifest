@@ -1,6 +1,6 @@
 {
-  "name": "한국교통대학교 캠퍼스 라이프",
-  "short_name": "교통대 라이프",
+  "name": "교통정리; 교통대 생활, 선배들이 정리 해드림",
+  "short_name": "교통정리",
   "description": "캠퍼스 지도, 맛집, 숨은장소, 생활꿀팁, 버스 시간표를 한곳에서",
   "lang": "ko",
   "start_url": "./index.html",

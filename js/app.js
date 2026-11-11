@@ -68,7 +68,7 @@
     else location.hash = route;
   }
   function currentRoute() {
-    var h = (location.hash || "").replace("#", "");
+    var h = (location.hash || "").replace("#", "").split("?")[0];  // #home?season=winter 처럼 뒤에 붙은 건 무시
     return ROUTES.indexOf(h) > -1 ? h : "home";
   }
   function logoHTML() {
@@ -193,10 +193,13 @@
           // 계절 배경 그림 (봄·여름·가을·겨울이 저절로 바뀜, data/site.js의 hero.seasons)
           '<img class="hero-bg hero-bg--' + heroSeason() + '" src="' + esc(heroImage()) + '" alt="' + esc(SEASON_LABEL[heroSeason()]) + ' 교통대 정문 일러스트">' +
           '<div class="hero-content hero-content--text">' +
-            '<div class="hero-card">' +
-              '<p class="hero-tag">' + esc(h.tag) + ' <span aria-hidden="true">♡</span></p>' +
-              '<h1 class="hero-title">' + h.titleLines.map(function (t) { return "<span>" + esc(t) + "</span>"; }).join("") + "</h1>" +
-              '<p class="hero-desc">' + h.descLines.map(function (t) { return "<span>" + esc(t) + "</span>"; }).join("") + "</p>" +
+            // 시안: 배지 · 교통정리(손글씨 밑줄) · 한 줄 소개 · 검색창 (계절 그림 왼쪽 하늘 자리에 가운데 정렬)
+            '<div class="hero-card hero-card--brand">' +
+              '<p class="hero-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21V10l9-6 9 6v11z"/><path d="M7 21v-4M12 21v-5M17 21v-4M7 13.5v-.5M12 12v-.5M17 13.5v-.5"/></svg>' + esc(h.badge || "") + "</p>" +
+              '<h1 class="hero-title"><span class="ht-text">' + esc(h.titleLines.join(" ")) + "</span>" +
+                '<svg class="ht-spark" viewBox="0 0 40 40" aria-hidden="true"><path d="M16 22 25 4M22 30l15-6"/></svg>' +
+                '<svg class="ht-swoosh" viewBox="0 0 400 40" preserveAspectRatio="none" aria-hidden="true"><path d="M4 30 C 90 18, 200 16, 300 24 C 330 27, 345 14, 337 7 C 328 0, 316 12, 326 22 C 340 34, 372 28, 396 18"/></svg></h1>' +
+              '<p class="hero-desc">' + esc(h.descLines.join(" ")) + "</p>" +
             '<form class="hero-search" id="heroSearch" role="search">' + ICON.search +
               '<label class="sr-only" for="heroSearchInput">정보 검색</label>' +
               '<input id="heroSearchInput" type="search" autocomplete="off" placeholder="' + esc(h.searchPlaceholder) + '">' +
@@ -241,7 +244,7 @@
   /* ---------- 계절 배경: 방문자 기기의 오늘 날짜로 봄·여름·가을·겨울을 골라요 ---------- */
   var SEASON_LABEL = { spring: "봄", summer: "여름", autumn: "가을", winter: "겨울" };
   function heroSeason() {
-    var q = (location.search.match(/[?&]season=(spring|summer|autumn|winter)/) || [])[1];
+    var q = ((location.search + location.hash).match(/[?&]season=(spring|summer|autumn|winter)/) || [])[1];
     if (q) return q;  // 미리보기용: 주소 끝에 ?season=winter
     var m = new Date().getMonth() + 1;
     return m >= 3 && m <= 5 ? "spring" : m >= 6 && m <= 8 ? "summer" : m >= 9 && m <= 11 ? "autumn" : "winter";
