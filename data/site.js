@@ -4,7 +4,7 @@
  * 이 파일만 고치면 홈페이지의 글자, 메뉴, 그림을 바꿀 수 있어요.
  *  - placeholder: true  → 임시 콘텐츠예요. 실제 정보로 바꿔 주세요.
  *  - img 경로            → assets/img 안의 그림을 같은 이름으로 덮어쓰면 교체돼요.
- *  - route               → 눌렀을 때 이동할 화면 (home, map, hidden, food, tips, community, etc, notice, events(학사일정), search, bus(버스 시간표), favorites(내 장소))
+ *  - route               → 눌렀을 때 이동할 화면 (home, map, hidden, food, tips, community, etc, notice, events(학사일정), search, bus(교내 버스 실시간 정류장), favorites(내 장소))
  */
 window.SITE = {
   name: "한국교통대학교 캠퍼스 라이프",

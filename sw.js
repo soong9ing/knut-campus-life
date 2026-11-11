@@ -1,6 +1,6 @@
 /* 오프라인용 캐시: 한 번 연 화면과 정보는 인터넷이 약해도 보여요.
    파일을 고친 뒤에는 VERSION 숫자를 올려 주세요. (그래야 새 파일로 바뀌어요) */
-var VERSION = "campus-life-v5";
+var VERSION = "campus-life-v17";
 var CORE = ["./", "./index.html", "./manifest.webmanifest",
   "./css/style.css", "./js/social.js", "./js/features.js", "./js/app.js", "./js/chat.js",
   "./data/site.js", "./data/places.js", "./data/floors.js", "./data/notices.js", "./data/bus.js", "./data/calendar.js",
@@ -24,7 +24,9 @@ self.addEventListener("fetch", function (e) {
     }));
     return;
   }
-  e.respondWith(fetch(e.request).then(function (res) {
+  // no-cache: 브라우저에 저장된 옛 파일 대신 항상 GitHub에 새 파일이 있는지 확인해요
+  var req = e.request.mode === "navigate" ? e.request : new Request(e.request, { cache: "no-cache" });
+  e.respondWith(fetch(req).then(function (res) {
     var copy = res.clone(); caches.open(VERSION).then(function (c) { c.put(e.request, copy); }); return res;
-  }).catch(function () { return caches.match(e.request).then(function (hit) { return hit || caches.match("./index.html"); }); }));
+  }).catch(function () { return caches.match(e.request, { ignoreSearch: true }).then(function (hit) { return hit || caches.match("./index.html"); }); }));
 });

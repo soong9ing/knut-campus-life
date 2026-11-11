@@ -598,7 +598,7 @@ body.no-scroll { overflow: hidden; }
 .notice-body .pill-btn { margin-top: 12px; height: 36px; font-size: 13.5px; padding: 0 18px; }
 .page-head .toolbar .text-btn + .text-btn { margin-left: 6px; }
 
-/* 오늘의 캠퍼스 (다음 버스 · D-day · 오늘 뭐 먹지) */
+/* 오늘의 캠퍼스 (교내 버스 · D-day · 오늘 뭐 먹지) */
 .fw-row { margin-top: calc(var(--k) * 26); display: grid; grid-template-columns: 1.15fr 1.15fr 0.9fr; gap: calc(var(--k) * 12); }
 .fw-card { min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; background: var(--card); border: 1px solid var(--card-line); border-radius: var(--radius); box-shadow: var(--shadow); }
 .fw-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -620,21 +620,63 @@ body.no-scroll { overflow: hidden; }
 .dday--apply .dday-badge { background: #2b7a4b; }
 .dday--holiday .dday-badge { background: #2d5f7b; }
 
-/* 버스 시간표 화면 */
+/* 교내 버스 화면 (지도 + 실시간 도착) */
 .bus-group h2, .cal-month h2 { margin: 26px 0 10px; font: 400 22px/1.2 var(--f-display); color: var(--title); }
-.bus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
-.bus-card { min-width: 0; padding: 16px 18px; background: var(--paper); border: 1px solid var(--card-line); border-radius: 14px; box-shadow: var(--shadow); }
-.bus-card h3 { margin: 0; font: 700 16px/1.35 var(--f-body); }
-.bus-card .meta { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
-.bus-next { margin: 10px 0 0; font-size: 14px; color: var(--title); font-weight: 700; }
-.bus-next b { font-size: 22px; color: var(--ink); margin-right: 4px; font-variant-numeric: tabular-nums; }
-.bus-times { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px; }
-.bus-times li { padding: 3px 8px; border-radius: 7px; background: #f4eee6; font-size: 13px; font-variant-numeric: tabular-nums; }
-.bus-times li small { color: var(--title); font-weight: 700; }
-.bus-times li.is-past { color: var(--soft); text-decoration: line-through; background: transparent; }
-.bus-times li.is-next { background: var(--wine); color: var(--white); font-weight: 700; }
-.bus-times li.is-next small { color: var(--white); }
-.bus-card .hint { margin-top: 8px; }
+.bus-layout { margin-top: 18px; display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
+.bus-map-wrap { position: relative; min-width: 0; }
+.bus-map { height: 520px; border-radius: 14px; border: 1px solid var(--card-line); box-shadow: var(--shadow); overflow: hidden; background: #eef0ea; z-index: 0; }
+.bus-side { min-width: 0; padding: 14px; background: var(--paper); border: 1px solid var(--card-line); border-radius: 14px; box-shadow: var(--shadow); max-height: 520px; overflow: auto; }
+.bus-side h2 { margin: 0 0 8px; font: 400 20px/1.2 var(--f-display); color: var(--title); }
+.stop-list ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.stop-item { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 9px 12px; border: 1px solid var(--card-line); border-radius: 10px; background: var(--white, #fff); font: 700 14px/1.35 var(--f-body); color: var(--ink); text-align: left; cursor: pointer; }
+.stop-item small { font-weight: 400; font-size: 12px; color: var(--soft); }
+.stop-item:hover { border-color: var(--wine); }
+.stop-item[aria-pressed="true"] { background: var(--wine); border-color: var(--wine); color: var(--white); }
+.stop-item[aria-pressed="true"] small { color: #f3d6db; }
+.map-mark { display: grid; place-items: center; }
+.map-mark--leaflet { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); }
+.bus-map .maplibregl-ctrl-attrib { font-size: 11px; }
+.stop-pin { position: relative; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; background: #2f6fd6; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); cursor: pointer; transition: transform .15s, background .15s; }
+.stop-pin svg { width: 16px; height: 16px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+.stop-pin svg circle { fill: #fff; stroke: none; }
+.stop-pin:hover { transform: scale(1.12); }
+.stop-pin em { display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 6px; white-space: nowrap; font: 700 12.5px/1.3 var(--f-body); font-style: normal; color: #fff; background: var(--wine); padding: 4px 9px; border-radius: 7px; box-shadow: 0 2px 6px rgba(0,0,0,.25); pointer-events: none; }
+.stop-pin.is-on { background: var(--wine); transform: scale(1.25); }
+.stop-pin.is-on em { display: block; }
+.leaflet-tooltip.stop-tip { font: 700 12px/1.3 var(--f-body); color: var(--ink); padding: 3px 8px; border-radius: 6px; }
+.campus-pin span { display: inline-block; white-space: nowrap; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,.85); color: var(--title); border: 1px solid rgba(141,31,53,.35); font: 700 12px/1.3 var(--f-body); pointer-events: none; }
+.arr-panel { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 500; max-height: 62%; overflow: auto; padding: 14px 16px; background: var(--paper); border: 1px solid var(--card-line); border-radius: 14px; box-shadow: 0 8px 28px rgba(0,0,0,.18); }
+.arr-panel[hidden] { display: none; }
+.arr-head { display: flex; align-items: flex-start; gap: 6px; }
+.arr-head > div { flex: 1; min-width: 0; }
+.arr-head h3 { margin: 0; font: 700 17px/1.35 var(--f-body); color: var(--ink); }
+.arr-meta { margin: 2px 0 0; font-size: 12px; color: var(--soft); }
+.arr-btn { flex: none; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--card-line); background: #fff; font-size: 15px; cursor: pointer; color: var(--ink); }
+.arr-btn:hover { border-color: var(--wine); }
+.arr-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.arr-list li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: #f6f1ea; }
+.arr-list li.is-main { background: #fdeef0; }
+.arr-no { flex: none; min-width: 48px; text-align: center; padding: 3px 8px; border-radius: 8px; background: #2b6a3f; color: #fff; font: 700 14px/1.3 var(--f-body); font-variant-numeric: tabular-nums; }
+.arr-list li.is-main .arr-no { background: var(--wine); }
+.arr-where { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); }
+.arr-time { flex: none; min-width: 72px; text-align: right; font-size: 15px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.arr-time.is-soon { color: #c2410c; }
+.arr-empty { margin: 12px 0 2px; font-size: 14px; color: var(--muted); line-height: 1.6; }
+.arr-empty small, .arr-id { font-size: 11.5px; color: var(--soft); }
+.arr-id { margin: 10px 0 0; }
+.bus-contact { margin-top: 18px; }
+@media (max-width: 860px) {
+  .bus-layout { grid-template-columns: 1fr; }
+  .bus-map { height: 64vh; min-height: 380px; }
+  .bus-side { max-height: none; }
+  .arr-panel { left: 8px; right: 8px; bottom: 8px; max-height: 70%; }
+}
+
+/* 홈 '교내 버스' 칸 (누르면 지도) */
+a.fw-bus { color: inherit; text-decoration: none; transition: border-color .15s, transform .15s; }
+a.fw-bus:hover, a.fw-bus:focus-visible { border-color: var(--wine); transform: translateY(-2px); }
+.fw-bus-map { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 999px; background: var(--wine); color: var(--white); font: 700 14px/1.2 var(--f-body); }
+.fw-bus-map svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; }
 
 /* 학사일정 화면 */
 .cal-list { list-style: none; margin: 0; padding: 0; background: var(--paper); border: 1px solid var(--card-line); border-radius: 14px; overflow: hidden; }
@@ -867,4 +909,196 @@ body.no-scroll { overflow: hidden; }
 @media (max-width: 760px) {
   .hero-bg { aspect-ratio: 2.2 / 1; height: auto; object-fit: cover; object-position: left center; }
   .hero-search input { font-size: 15px; }
+}
+
+
+/* =============================================================
+   휴대폰 화면 (760px 이하) — 2026-11-10 최주희
+   - 위 메뉴 6개를 한 줄에 다 보이게
+   - 맨 위 큰 그림 숨김
+   - 위쪽 고정 바로가기: 교내 버스 · 학사일정 · 오늘 뭐 먹지 · 공지사항 · 내 장소
+   ============================================================= */
+.tab-bar { display: none; }
+.menu-card--pick { display: none; }
+.pick-fab { display: none; }
+.search-pop { display: none; }
+.brand .brand-sig--dark { display: none; }
+@media (max-width: 760px) {
+  /* 위쪽(로고 · 메뉴 · 검색창)을 아래 학교 영역처럼 버건디 배경으로 */
+  .site-header { background: var(--burgundy); color: var(--white); box-shadow: 0 2px 10px rgba(117, 36, 50, 0.18); }
+  .brand .brand-sig { display: none; }
+  .brand .brand-sig--dark { display: block; }
+  .user-btn { color: var(--white); }
+  .user-btn svg { fill: currentColor; }
+  .site-header .tab-bar { background: transparent; }
+  .site-header .tab-bar a, .site-header .tab-bar button { color: rgba(255, 255, 255, 0.82); }
+  .site-header .tab-bar a[aria-current="page"] { color: var(--white); }
+  .site-header .tab-bar a::after { background: var(--white); }
+  /* 검색창 줄은 버건디 밖(밝은 바탕)으로: 헤더 아래 54px만 밝은 색 */
+  /* 버건디는 로고 줄만, 위 메뉴·검색창 줄은 베이지 */
+  /* 위쪽 전체 베이지 (원래 색 로고) */
+  .site-header { background: var(--header-bg) !important; color: var(--nav-ink); padding-bottom: 8px; box-shadow: 0 1px 0 rgba(154, 36, 62, 0.08); }
+  .brand .brand-sig { display: block !important; }
+  .brand .brand-sig--dark { display: none !important; }
+  .user-btn { color: var(--nav-ink) !important; }
+  body::before { background: var(--header-bg) !important; }
+  .site-header .tab-bar { margin-top: 4px !important; }
+  .site-header .tab-bar a, .site-header .tab-bar button { color: var(--nav-ink) !important; }
+  .site-header .tab-bar a[aria-current="page"] { color: var(--wine) !important; }
+  .site-header .tab-bar a::after { background: var(--wine) !important; }
+  .nav-search { margin-top: 12px !important; background: var(--white); border-color: var(--nav-ink); }
+  body::before { background: var(--burgundy); }
+
+  /* 검색창을 누르면 펼쳐지는 인기 콘텐츠 목록 */
+  .site-header { position: sticky; }
+  .search-pop:not([hidden]) {
+    display: block; position: absolute; top: calc(100% - 4px); left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+    z-index: 60; max-height: 60vh; overflow-y: auto; padding: 10px 8px 8px;
+    background: var(--white); border: 1px solid var(--card-line); border-radius: 16px; box-shadow: 0 12px 30px rgba(117, 36, 50, 0.18);
+  }
+  .search-pop-title { margin: 0 8px 6px; font: 700 12.5px/1.3 var(--f-body); color: var(--title); }
+  .search-pop ol { margin: 0; padding: 0; list-style: none; }
+  .search-pop button {
+    width: 100%; display: flex; align-items: center; gap: 8px; padding: 9px 8px; border: 0; border-radius: 10px;
+    background: none; text-align: left; font: 500 14px/1.3 var(--f-body); color: var(--ink); cursor: pointer;
+  }
+  .search-pop button:active, .search-pop button:hover { background: var(--notice); }
+  .search-pop b { flex: none; width: 18px; font: 400 17px/1 var(--f-display); color: var(--title); text-align: center; }
+  .search-pop .badge { flex: none; font-size: 10.5px; padding: 2px 6px; }
+  .sp-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* 위 메뉴: 옆으로 넘기지 않고 6개가 한 줄에 */
+  .nav-row { padding-block: 8px 0; }
+  .main-nav { overflow: visible; }
+  .main-nav ul { width: 100%; display: flex; justify-content: space-between; gap: 0; }
+  .main-nav li { min-width: 0; }
+  .main-nav a, .main-nav a[aria-current="page"] {
+    display: block; padding: 0; height: 40px; line-height: 40px; text-align: center;
+    font: 700 13.5px/40px var(--f-body); letter-spacing: -0.04em; white-space: nowrap;
+  }
+  .main-nav a svg { display: none; }
+  .main-nav a::after { bottom: 3px; left: 0; right: 0; }
+
+  /* 맨 위 그림은 보이고, 그림 아래 큰 검색창은 숨김 (검색은 맨 위 로고 옆에서) */
+  .hero-search { display: none; }
+
+  /* 위쪽 글자 메뉴 = 바로가기 5개 (웹페이지 메뉴처럼 글자 + 밑줄). 기존 6개 메뉴 줄은 휴대폰에서 숨김 */
+  .main-nav { display: none; }
+  .nav-row { padding-block: 8px 0; }
+  .tab-bar {
+    display: flex; justify-content: space-between; background: var(--header-bg);
+    padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+  }
+  .tab-bar a, .tab-bar button {
+    position: relative; display: block; height: 42px; padding: 0; border: 0; background: none; cursor: pointer;
+    color: var(--nav-ink); text-decoration: none; font: 700 14.5px/42px var(--f-body); letter-spacing: -0.04em; white-space: nowrap;
+  }
+  .tab-bar svg { display: none; }
+  .tab-bar a::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 4px; height: 2.5px; border-radius: 2px;
+    background: var(--wine); transform: scaleX(0); transition: transform 0.2s;
+  }
+  .tab-bar a[aria-current="page"]::after { transform: scaleX(1); }
+
+  /* 검색창은 맨 위 로고 옆 하나만 */
+  .nav-row { gap: 10px; }
+  .nav-tools { flex: 1; min-width: 0; justify-content: flex-end; }
+  /* 윗줄: 로고(크게) + 내 정보 버튼 / 둘째 줄: 검색창 전체 폭 (안내 문구가 다 들어가게) */
+  /* 순서: 로고 + 내 정보 → 위 메뉴(홈·학사일정·공지사항·내 장소) → 검색창 */
+  .site-header {
+    display: flex; flex-wrap: wrap; align-items: center; row-gap: 0;
+    padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+  }
+  .nav-row, .nav-tools { display: contents; }
+  .brand { order: 0; }
+  .user-btn { order: 1; margin-left: auto; }
+  .site-header .tab-bar { order: 2; flex: 1 1 100%; padding-inline: 0; margin-top: 4px; }
+  .nav-search { order: 3; display: flex; flex: 1 1 100%; min-width: 0; width: auto; max-width: none; gap: 6px; margin-top: 4px; }
+  .brand .brand-sig { height: 34px; }
+  .nav-row { padding-block: 12px 2px; }
+  .user-btn svg { width: 26px; height: 26px; }
+  .nav-row { gap: 8px; }
+  .user-btn { flex: none; }
+  .nav-search input { min-width: 0; width: 100%; padding: 0; font-size: 14px; letter-spacing: -0.02em; }
+  .nav-search { height: 38px; padding-left: 14px; padding-right: 8px; }
+  .nav-search button { width: 28px; height: 28px; }
+  .nav-search svg { width: 18px; height: 18px; }
+
+  /* 휴대폰 홈 = 스크롤 없이 누르는 화면: 메뉴 6개만. 그림과 아래 칸들은 숨기고 위 메뉴·버튼으로 들어가기 */
+  body[data-route="home"] .hero { display: none; }
+  body[data-route="home"] .fw-row,
+  body[data-route="home"] .bottom-row,
+  body[data-route="home"] .page-end { display: none; }
+  /* 인기 콘텐츠: 메뉴 아래, 학교 영역 위. 순위·분류·제목만 한 줄 카드로 */
+  body[data-route="home"] .popular { margin-top: 12px; }
+  body[data-route="home"] .section-title { font-size: 17px; gap: 6px; }
+  body[data-route="home"] .section-title img { width: 24px; }
+  /* 가로로 넘기는 카드: 순위·분류 위, 제목 아래 (두 줄까지) */
+  body[data-route="home"] .pop-cards {
+    margin-top: 6px; display: flex; gap: 6px; overflow: visible;
+    padding: 2px 0 4px;
+    scrollbar-width: none;
+  }
+  body[data-route="home"] .pop-cards::-webkit-scrollbar { display: none; }
+  body[data-route="home"] .pop-card, body[data-route="home"] .pop-cards .pop-card:last-child {
+    flex: 1 1 0; min-width: 0; grid-column: auto;
+    padding: 8px 9px; flex-direction: column; align-items: flex-start; gap: 5px; min-height: 0;
+  }
+  body[data-route="home"] .pop-top { gap: 5px; }
+  body[data-route="home"] .pop-rank { font-size: 17px; min-width: 0; }
+  body[data-route="home"] .pop-top .badge { font-size: 10.5px; padding: 2px 6px; }
+  body[data-route="home"] .pop-body { width: 100%; }
+  /* 3등까지만 */
+  body[data-route="home"] .pop-cards .pop-card:nth-child(n+4) { display: none; }
+  body[data-route="home"] .pop-body h3 {
+    font-size: 12px; line-height: 1.3; white-space: normal;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em;
+  }
+  body[data-route="home"] .pop-meta, body[data-route="home"] .pop-desc, body[data-route="home"] .pop-foot { display: none; }
+
+  /* 오늘 뭐 먹지 동그란 버튼 (챗봇 버튼 바로 위) */
+  .pick-fab {
+    display: grid; place-items: center; position: fixed; z-index: 75;
+    right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(18px + 52px + 12px + env(safe-area-inset-bottom, 0px));
+    width: 52px; height: 52px; border-radius: 50%; border: 0; cursor: pointer;
+    background: var(--white); box-shadow: 0 8px 22px rgba(117, 36, 50, 0.3); outline: 3px solid var(--wine); outline-offset: -3px;
+    font-size: 27px; line-height: 1;
+  }
+  .pick-fab:active { transform: scale(0.95); }
+
+  /* 가운데 메뉴 6개: 2열 × 3줄, 그림 + 이름 + 설명 + 화살표 */
+  .menu-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 10px;
+    --tile-h: calc((100svh - 150px - 128px - 112px - 26px - env(safe-area-inset-bottom, 0px)) / 3);
+  }
+  .menu-cards .menu-card, .menu-cards .menu-card:last-child {
+    grid-column: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+    min-height: max(92px, var(--tile-h)); padding: 6px 6px; border-radius: 18px; text-align: center;
+  }
+  .menu-card--pick { display: flex; text-decoration: none; color: inherit; border: 1px solid var(--card-line); background: var(--card); box-shadow: var(--shadow); }
+  .menu-card img, .menu-cards .menu-card img, .menu-cards .menu-card:last-child img { width: auto; height: min(48px, calc(var(--tile-h) * 0.34)); object-fit: contain; }
+  .pick-ic { font-size: min(40px, calc(var(--tile-h) * 0.28)); line-height: 1.2; }
+  .menu-cards .menu-card h3 { margin: 4px 0 0; font: 700 16px/1.2 var(--f-body); color: var(--title); letter-spacing: -0.03em; white-space: nowrap; }
+  .menu-cards .menu-card p { display: block; margin: 2px 0 0; font-size: 11px; line-height: 1.35; color: var(--muted); text-align: center; letter-spacing: -0.03em; }
+  .menu-cards .menu-card p span { display: block; }
+  .menu-cards .menu-card p span + span::before { content: none; }
+  .menu-cards .menu-card .arrow-dot { display: none; }
+  /* 순서: 캠퍼스 지도 · 맛집 / 숨은장소 · 생활꿀팁 / 커뮤니티 · 교내 버스 */
+  .menu-cards .menu-card:nth-child(1) { order: 1; }
+  .menu-cards .menu-card:nth-child(3) { order: 2; }
+  .menu-cards .menu-card:nth-child(2) { order: 3; }
+  .menu-cards .menu-card:nth-child(4) { order: 4; }
+  .menu-cards .menu-card:nth-child(5) { order: 5; }
+  .menu-cards .menu-card:nth-child(6) { order: 6; }
+  /* 아래 학교 영역: 슬로건 빼고 로고 + SNS만 작게 → 홈 한 화면에 */
+  .footer-slogan { display: none; }
+  .to-top, .mascot-btn { display: none; }
+  .footer-row { gap: 10px; min-height: 0; padding-block: 14px 12px; }
+  .footer-brand .brand-sig { height: 40px; }
+  .site-footer { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body[data-route="home"] #app { padding-bottom: 14px; }
+  .bottom-row--three .banner { display: none; }
+  .pop-cards .pop-card:nth-child(n+5) { display: none; }
+  .pop-cards .pop-card:last-child { grid-column: auto; }
+  .pop-hint { display: none; }
 }

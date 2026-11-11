@@ -1,6 +1,6 @@
 /* =============================================================
    편의 기능 모음
-   1) 다음 버스까지 몇 분        (data/bus.js)
+   1) 교내 버스 지도·실시간 도착 (data/bus.js)
    2) 학사일정 D-day              (data/calendar.js)
    3) 즐겨찾기 (내 장소)           — 이 브라우저에만 저장
    4) 오늘 뭐 먹지? 랜덤 추천
@@ -11,7 +11,7 @@
    ============================================================= */
 (function () {
   "use strict";
-  var SITE = window.SITE || {}, P = window.PLACES || {}, BUS = window.BUS || { routes: [] }, CAL = window.CALENDAR || { events: [] };
+  var SITE = window.SITE || {}, P = window.PLACES || {}, BUS = window.BUS || {}, CAL = window.CALENDAR || { events: [] };
   var SEC = { food: "맛집", tips: "생활꿀팁", hidden: "숨은장소", etc: "자유" };
   var BY_ID = {};
   Object.keys(SEC).forEach(function (s) { (P[s] || []).forEach(function (it) { BY_ID[it.id] = { sec: s, it: it }; }); });
@@ -32,77 +32,332 @@
   function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) {} }
 
   /* =============================================================
-     1) 버스
+     1) 버스 — 충주캠퍼스 정류장 지도 + 실시간 도착 (TAGO API)
      ============================================================= */
-  function inSemester(d) { var s = BUS.semester; if (!s) return true; var t = ymd(d); return t >= s[0] && t <= s[1]; }
-  function isHoliday(d) {
-    var t = ymd(d);
-    return (CAL.events || []).some(function (e) { return e.type === "holiday" && t >= e.start && t <= e.end; });
+  var TAGO = "https://apis.data.go.kr/1613000/";
+  var busMap = null, busTimer = null, busTick = null, busSel = null, busStops = [], busMarkers = {};
+  var STOP_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="14" rx="3"/><path d="M5 11h14M8.5 17.5v2.5M15.5 17.5v2.5"/><circle cx="8.5" cy="14.3" r=".9"/><circle cx="15.5" cy="14.3" r=".9"/></svg>';
+
+  function tagoURL(path, params) {
+    var q = "serviceKey=" + encodeURIComponent(BUS.serviceKey) + "&_type=json&numOfRows=100&pageNo=1";
+    Object.keys(params).forEach(function (k) { q += "&" + k + "=" + encodeURIComponent(params[k]); });
+    var url = TAGO + path + "?" + q;
+    return BUS.proxy ? BUS.proxy + encodeURIComponent(url) : url;
   }
-  function runsOn(route, d) {
-    if (route.days.indexOf(d.getDay()) < 0) return false;
-    if (route.semesterOnly && (!inSemester(d) || isHoliday(d))) return false;
-    return true;
+  // TAGO 응답의 item은 배열·객체 하나·빈 문자열 중 하나라서 항상 배열로 바꿔요
+  function tagoItems(json) {
+    var h = json && json.response && json.response.header;
+    if (h && h.resultCode && h.resultCode !== "00") throw new Error(h.resultMsg || "API 오류");
+    var items = json && json.response && json.response.body && json.response.body.items;
+    var it = items && items.item;
+    return !it ? [] : Array.isArray(it) ? it : [it];
   }
-  function times(route) { return route.times.map(function (x) { return typeof x === "string" ? { t: x, note: "" } : x; }); }
-  // 지금 이후 첫 차 (오늘 없으면 다음 운행일 첫 차)
-  function nextBus(route, now) {
-    now = now || new Date();
-    var cur = now.getHours() * 60 + now.getMinutes();
-    if (runsOn(route, now)) {
-      var today = times(route).filter(function (x) { return toMin(x.t) >= cur; });
-      if (today.length) return { t: today[0].t, note: today[0].note, wait: toMin(today[0].t) - cur, day: 0, after: today.slice(1, 3) };
+  function tago(path, params) {
+    return fetch(tagoURL(path, params)).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.text();
+    }).then(function (t) {
+      try { return tagoItems(JSON.parse(t)); }
+      catch (e) {
+        if (/SERVICE_KEY|SERVICE KEY|인증/i.test(t)) throw new Error("인증키 오류");
+        throw e;
+      }
+    });
+  }
+  function distM(a, b) {
+    var R = 6371000, toR = Math.PI / 180;
+    var dLa = (b[0] - a[0]) * toR, dLo = (b[1] - a[1]) * toR;
+    var x = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(a[0] * toR) * Math.cos(b[0] * toR) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
+    return 2 * R * Math.asin(Math.sqrt(x));
+  }
+  function stopName(s) { return (BUS.names && BUS.names[s.nodeid]) || s.nodenm; }
+
+  // 캠퍼스가 넓어서 가운데 + 동서남북 다섯 곳 주변 정류장을 모아요 (하루 동안 이 브라우저에 저장)
+  function loadStops() {
+    var key = "knut-bus-stops-v1", cached = load(key, null), c = BUS.center;
+    if (cached && cached.day === ymd(new Date()) && cached.center === c.join(",") && cached.stops.length) return Promise.resolve(cached.stops);
+    var d = 0.0036, pts = [c, [c[0] + d, c[1]], [c[0] - d, c[1]], [c[0], c[1] + d * 1.25], [c[0], c[1] - d * 1.25]];
+    return Promise.all(pts.map(function (p) {
+      return tago("BusSttnInfoInqireService/getCrdntPrxmtSttnList", { gpsLati: p[0], gpsLong: p[1] }).catch(function (e) { return e; });
+    })).then(function (res) {
+      var seen = {}, out = [], err = null;
+      res.forEach(function (list) {
+        if (list instanceof Error) { err = list; return; }
+        list.forEach(function (s) {
+          if (seen[s.nodeid]) return; seen[s.nodeid] = 1;
+          var pos = [+s.gpslati, +s.gpslong];
+          if (distM(c, pos) <= (BUS.radius || 900)) out.push({ nodeid: s.nodeid, nodenm: s.nodenm, nodeno: s.nodeno, citycode: s.citycode, pos: pos });
+        });
+      });
+      if (!out.length && err) throw err;
+      save(key, { day: ymd(new Date()), center: c.join(","), stops: out });
+      return out;
+    });
+  }
+
+  /* ---------- 지도 불러오기 ----------
+     1순위: MapLibre + OpenFreeMap (키 없음) — 색을 직접 칠하고 건물·가게 이름을 숨길 수 있어요
+     2순위: 그게 안 되는 기기면 Leaflet + OpenStreetMap 그림 지도 */
+  function loadAsset(tag, url) {
+    return new Promise(function (ok, no) {
+      var el = document.createElement(tag);
+      if (tag === "link") { el.rel = "stylesheet"; el.href = url; ok(); } else { el.src = url; el.onload = ok; el.onerror = no; }
+      document.head.appendChild(el);
+    });
+  }
+  function loadLeaflet() {
+    if (window.L) return Promise.resolve(window.L);
+    loadAsset("link", "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css");
+    return loadAsset("script", "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js").then(function () { return window.L; });
+  }
+  function loadMapLibre() {
+    if (window.maplibregl) return Promise.resolve(window.maplibregl);
+    loadAsset("link", "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css");
+    return loadAsset("script", "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js").then(function () {
+      if (!window.maplibregl || (maplibregl.supported && !maplibregl.supported())) throw new Error("no webgl");
+      return window.maplibregl;
+    });
+  }
+  // 카카오맵 느낌으로 다시 칠하기: 캠퍼스 연파랑 · 강 하늘색 · 건물/가게 이름 숨김
+  function restyle(map) {
+    var C = BUS.mapColors || {};
+    var layers = map.getStyle().layers || [];
+    var HIDE = ["housenumber", "aerodrome_label", "mountain_peak"];
+    // 장소 이름 중 가게·식당·편의점 같은 것만 숨기고, 학교 건물 이름은 남겨요
+    var SHOPS = BUS.hidePlaceTypes || ["shop", "grocery", "convenience", "supermarket", "restaurant", "fast_food", "cafe", "bar", "beer", "pub",
+      "ice_cream", "bakery", "alcohol_shop", "clothing_store", "hardware", "furniture", "jewelry", "mobile_phone", "music", "shoes",
+      "toys", "florist", "gift", "laundry", "hairdresser", "beauty", "bank", "atm", "fuel", "car", "car_rental", "bicycle",
+      "lodging", "pharmacy", "dentist", "doctors", "veterinary", "cinema", "theatre", "attraction", "marketplace", "optician",
+      "stationery", "books", "art_gallery", "dog_park", "golf", "post", "bus", "railway"];
+    var isShop = ["in", ["coalesce", ["get", "class"], ""], ["literal", SHOPS]];
+    var firstAbove = null;
+    layers.forEach(function (l) {
+      var sl = l["source-layer"];
+      try {
+        if (l.type === "symbol" && HIDE.indexOf(sl) > -1) map.setLayoutProperty(l.id, "visibility", "none");
+        if (l.type === "fill-extrusion") map.setLayoutProperty(l.id, "visibility", "none");
+        if (sl === "water" && l.type === "fill") map.setPaintProperty(l.id, "fill-color", C.water || "#a8d8f0");
+        if (sl === "waterway" && l.type === "line") map.setPaintProperty(l.id, "line-color", C.water || "#a8d8f0");
+        if (sl === "building" && l.type === "fill") { map.setPaintProperty(l.id, "fill-color", C.building || "#f4f6f8"); map.setPaintProperty(l.id, "fill-outline-color", "#d9dee4"); }
+        if (l.type === "symbol" && sl === "poi") {
+          map.setPaintProperty(l.id, "text-opacity", ["case", isShop, 0, 1]);
+          map.setPaintProperty(l.id, "icon-opacity", ["case", isShop, 0, 1]);
+          map.setLayoutProperty(l.id, "text-field", ["coalesce", ["get", "name:ko"], ["get", "name"]]);
+        }
+        if (l.type === "symbol" && ["transportation_name", "place", "water_name"].indexOf(sl) > -1)
+          map.setLayoutProperty(l.id, "text-field", ["coalesce", ["get", "name:ko"], ["get", "name"]]);
+      } catch (e) {}
+      if (!firstAbove && (sl === "building" || sl === "transportation")) firstAbove = l.id;
+    });
+    try {
+      map.addLayer({
+        id: "knut-campus", type: "fill", source: "openmaptiles", "source-layer": "landuse",
+        filter: ["in", ["get", "class"], ["literal", ["university", "college", "school"]]],
+        paint: { "fill-color": C.campus || "#d3e5f6", "fill-opacity": 0.85 }
+      }, firstAbove || undefined);
+    } catch (e) {}
+  }
+  function makeMap(el) {
+    return loadMapLibre().then(function (ml) {
+      return new Promise(function (ok, no) {
+        var map = new ml.Map({
+          container: el, style: BUS.mapStyle || "https://tiles.openfreemap.org/styles/liberty",
+          center: [BUS.center[1], BUS.center[0]], zoom: (BUS.zoom || 16) - 0.5,
+          attributionControl: { compact: true }, dragRotate: false, pitchWithRotate: false
+        });
+        if (map.touchZoomRotate) map.touchZoomRotate.disableRotation();
+        map.addControl(new ml.NavigationControl({ showCompass: false }), "top-left");
+        var done = false;
+        map.on("load", function () { done = true; restyle(map); ok(map); });
+        map.on("error", function (e) { if (!done) { done = true; try { map.remove(); } catch (x) {} no(e.error || e); } });
+        setTimeout(function () { if (!done) { done = true; try { map.remove(); } catch (x) {} no(new Error("timeout")); } }, 12000);
+      }).then(function (map) {
+        return {
+          remove: function () { map.remove(); },
+          add: function (pos, node, z) {
+            // 지도 라이브러리가 바깥 상자의 위치를 움직이고, 안쪽 핀은 우리 CSS(확대 효과 등)를 그대로 써요
+            var box = document.createElement("div");
+            box.className = "map-mark"; box.style.zIndex = z || 1; box.appendChild(node);
+            new ml.Marker({ element: box, anchor: "center" }).setLngLat([pos[1], pos[0]]).addTo(map);
+            return { setTop: function (on) { box.style.zIndex = on ? 1000 : (z || 1); } };
+          },
+          fit: function (pts) {
+            var b = new ml.LngLatBounds();
+            pts.forEach(function (p) { b.extend([p[1], p[0]]); });
+            map.fitBounds(b, { padding: 50, maxZoom: 16.8, duration: 0 });
+          },
+          panTo: function (pos) { map.easeTo({ center: [pos[1], pos[0]], duration: 400 }); }
+        };
+      });
+    }).catch(function () {
+      // 예비: Leaflet + OpenStreetMap
+      el.innerHTML = "";
+      return loadLeaflet().then(function (L) {
+        var map = L.map(el, { scrollWheelZoom: false }).setView(BUS.center, BUS.zoom || 16);
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+        return {
+          remove: function () { map.remove(); },
+          add: function (pos, node, z) {
+            var m = L.marker(pos, { icon: L.divIcon({ className: "", html: "", iconSize: null }), zIndexOffset: z || 0, keyboard: false }).addTo(map);
+            var holder = m.getElement ? m.getElement() : null;
+            var box = document.createElement("div");
+            box.className = "map-mark map-mark--leaflet"; box.appendChild(node);
+            if (holder) holder.appendChild(box);
+            return { setTop: function (on) { m.setZIndexOffset(on ? 1000 : (z || 0)); } };
+          },
+          fit: function (pts) { map.fitBounds(pts, { padding: [30, 30], maxZoom: 17 }); },
+          panTo: function (pos) { map.panTo(pos); }
+        };
+      });
+    });
+  }
+
+  // 남은 초 → "4분 12초" (1초마다 줄어들어요)
+  function arrText(sec) {
+    sec = Math.max(0, Math.round(sec));
+    if (sec <= 30) return "곧 도착";
+    var m = Math.floor(sec / 60), r = sec % 60;
+    return (m ? m + "분 " : "") + r + "초";
+  }
+  function tickArr() {
+    document.querySelectorAll(".arr-time[data-due]").forEach(function (el) {
+      var left = (+el.dataset.due - Date.now()) / 1000;
+      el.textContent = arrText(left);
+      el.classList.toggle("is-soon", left < 180);
+    });
+  }
+  function panelHTML(s, list, err) {
+    var main = BUS.mainBuses || [];
+    var body;
+    if (err) body = '<p class="arr-empty">도착 정보를 불러오지 못했어요. 잠시 후 다시 눌러 주세요.<br><small>' + esc(err) + "</small></p>";
+    else if (!list) body = '<p class="arr-empty">불러오는 중…</p>';
+    else if (!list.length) body = '<p class="arr-empty">지금 이 정류장으로 오고 있는 버스가 없어요.<br><small>주말·공휴일·방학이거나 운행 시간이 끝났을 수 있어요.</small></p>';
+    else {
+      list = list.slice().sort(function (a, b) { return (+a.arrtime) - (+b.arrtime); });
+      body = '<ul class="arr-list">' + list.map(function (a) {
+        var no = String(a.routeno), hot = main.indexOf(no) > -1, soon = +a.arrtime < 180, due = Date.now() + (+a.arrtime) * 1000;
+        return '<li class="' + (hot ? "is-main" : "") + '"><span class="arr-no">' + esc(no) + "</span>" +
+          '<span class="arr-where">' + esc(a.arrprevstationcnt) + "정거장 전" + (a.vehicletp && /저상/.test(a.vehicletp) ? " · 저상" : "") + "</span>" +
+          '<b class="arr-time' + (soon ? " is-soon" : "") + '" data-due="' + due + '">' + esc(arrText(+a.arrtime)) + "</b></li>";
+      }).join("") + "</ul>";
     }
-    for (var i = 1; i <= 14; i++) {
-      var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-      if (runsOn(route, d)) { var f = times(route)[0]; return { t: f.t, note: f.note, wait: null, day: i, date: d }; }
-    }
-    return null;
+    var t = new Date();
+    return '<div class="arr-head"><div><h3>' + esc(stopName(s)) + "</h3>" +
+      '<p class="arr-meta">' + (s.nodeno ? "정류장 번호 " + esc(s.nodeno) + " · " : "") + (list ? pad(t.getHours()) + ":" + pad(t.getMinutes()) + " 기준" : "") + "</p></div>" +
+      '<button type="button" class="arr-btn" id="arrRefresh" aria-label="새로고침">↻</button>' +
+      '<button type="button" class="arr-btn" id="arrClose" aria-label="닫기">✕</button></div>' + body +
+      '<p class="arr-id">ID ' + esc(s.nodeid) + " · " + (BUS.refreshSec || 30) + "초마다 자동으로 새로고침해요</p>";
   }
-  function waitText(n) {
-    if (!n) return "운행 정보 없음";
-    if (n.day === 0) return n.wait === 0 ? "곧 출발" : n.wait < 60 ? n.wait + "분 후" : Math.floor(n.wait / 60) + "시간 " + (n.wait % 60) + "분 후";
-    return (n.day === 1 ? "내일" : (n.date.getMonth() + 1) + "/" + n.date.getDate() + "(" + DAYS[n.date.getDay()] + ")") + " 첫차";
+  function showStop(s) {
+    busSel = s;
+    var panel = document.getElementById("busPanel");
+    if (!panel) return;
+    panel.hidden = false;
+    var render = function (list, err) {
+      if (busSel !== s || !document.getElementById("busPanel")) return;
+      panel.innerHTML = panelHTML(s, list, err);
+      document.getElementById("arrRefresh").onclick = function () { fetchArr(); };
+      document.getElementById("arrClose").onclick = function () { closeStop(); };
+    };
+    var fetchArr = function () {
+      tago("ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList", { cityCode: s.citycode, nodeId: s.nodeid })
+        .then(function (list) { render(list); }, function (e) { render(null, e.message); });
+    };
+    render(null);
+    fetchArr();
+    clearInterval(busTimer); clearInterval(busTick);
+    busTick = setInterval(function () {
+      if (!document.getElementById("busPanel") || busSel !== s) return clearInterval(busTick);
+      tickArr();
+    }, 1000);
+    busTimer = setInterval(function () {
+      if (!document.getElementById("busPanel") || busSel !== s) return clearInterval(busTimer);
+      if (!document.hidden) fetchArr();
+    }, (BUS.refreshSec || 30) * 1000);
+    document.querySelectorAll(".stop-pin").forEach(function (el) { el.classList.toggle("is-on", el.dataset.id === s.nodeid); });
+    Object.keys(busMarkers).forEach(function (id) { busMarkers[id].setTop(id === s.nodeid); });
+    document.querySelectorAll("[data-stop]").forEach(function (el) { el.setAttribute("aria-pressed", el.dataset.stop === s.nodeid ? "true" : "false"); });
+    if (busMap) busMap.panTo(s.pos);
   }
-    function route(id) { return BUS.routes.filter(function (r) { return r.id === id; })[0]; }
+  function closeStop() {
+    busSel = null; clearInterval(busTimer); clearInterval(busTick);
+    var p = document.getElementById("busPanel"); if (p) { p.hidden = true; p.innerHTML = ""; }
+    document.querySelectorAll(".stop-pin.is-on").forEach(function (el) { el.classList.remove("is-on"); });
+    document.querySelectorAll('[data-stop][aria-pressed="true"]').forEach(function (el) { el.setAttribute("aria-pressed", "false"); });
+  }
+
   function busWidgetHTML() {
-    var sel = load("knut-bus-route", "999-out");
-    if (!route(sel)) sel = "999-out";
-    var r = route(sel), n = nextBus(r);
-    return '<div class="fw-card fw-bus" id="fwBus">' +
-      '<div class="fw-head"><h3>🚌 교내 버스</h3><a class="more-link" href="#bus">전체 시간표 →</a></div>' +
-      '<label class="sr-only" for="fwBusSel">노선 고르기</label>' +
-      '<select class="select fw-select" id="fwBusSel">' + BUS.routes.map(function (x) {
-        return '<option value="' + x.id + '"' + (x.id === sel ? " selected" : "") + ">" + esc(x.name) + "</option>";
-      }).join("") + "</select>" +
-      '<p class="fw-big">' + (n ? esc(n.t) : "—") + ' <span class="fw-wait' + (n && n.day === 0 && n.wait <= 10 ? " is-soon" : "") + '">' + esc(waitText(n)) + "</span></p>" +
-      '<p class="fw-sub">' + esc(n && n.note ? n.note : r.from) + (n && n.after && n.after.length ? " · 그다음 " + n.after.map(function (x) { return x.t; }).join(", ") : "") + "</p>" +
-    "</div>";
+    return '<a class="fw-card fw-bus" id="fwBus" href="#bus" aria-label="실시간 버스 지도 열기">' +
+      '<span class="fw-bus-map" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.3"/></svg>실시간 버스 지도</span>' +
+      '<p class="fw-sub">충주캠퍼스 정류장을 지도에서 눌러 보세요. 버스가 몇 정거장 전인지, 몇 분 뒤 오는지 바로 보여요.</p>' +
+    "</a>";
   }
   function busPageHTML() {
-    var now = new Date(), cur = now.getHours() * 60 + now.getMinutes();
-    var groups = [];
-    BUS.routes.forEach(function (r) { if (groups.indexOf(r.group) < 0) groups.push(r.group); });
     return '<div class="wrap sub-page">' +
-      '<div class="page-head"><div class="crumb"><a href="#home">홈</a> › 교내 버스</div><h1>교내 버스 시간표</h1>' +
-      "<p>학교 안까지 들어오는 999번·700번 시간표예요. 지금 시각 기준으로 다음 차를 표시해요. 주말·공휴일·방학에는 운행하지 않고, 교통 상황에 따라 늦어질 수 있어요.</p>" +
-      '<div class="toolbar">' + (BUS.realtime ? '<a class="pill-btn" href="' + esc(BUS.realtime) + '" target="_blank" rel="noopener">실시간 버스 도착 정보' + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>' : "") +
-        (BUS.contact ? '<span class="hint">문의: ' + esc(BUS.contact) + "</span>" : "") + "</div></div>" +
-      groups.map(function (g) {
-        return '<section class="bus-group"><h2>' + esc(g) + '</h2><div class="bus-grid">' +
-          BUS.routes.filter(function (r) { return r.group === g; }).map(function (r) {
-            var n = nextBus(r, now), runs = runsOn(r, now);
-            return '<article class="bus-card"><h3>' + esc(r.name) + '</h3><p class="meta">' + esc(r.from) + "</p>" +
-              '<p class="bus-next">' + (n ? "<b>" + esc(n.t) + "</b> " + esc(waitText(n)) : "운행 정보 없음") + "</p>" +
-              '<ol class="bus-times">' + times(r).map(function (x) {
-                var past = runs && toMin(x.t) < cur, isNext = n && n.day === 0 && x.t === n.t;
-                return '<li class="' + (past ? "is-past" : "") + (isNext ? " is-next" : "") + '"' + (x.note ? ' title="' + esc(x.note) + '"' : "") + ">" + esc(x.t) + (x.note ? "<small>*</small>" : "") + "</li>";
-              }).join("") + "</ol>" +
-              (times(r).some(function (x) { return x.note; }) ? '<p class="hint">* ' + times(r).filter(function (x) { return x.note; }).map(function (x) { return x.t + " " + esc(x.note); }).join(" / ") + "</p>" : "") +
-              (r.info ? '<p class="hint">' + esc(r.info) + "</p>" : "") + "</article>";
-          }).join("") + "</div></section>";
-      }).join("") + "</div>";
+      '<div class="page-head"><div class="crumb"><a href="#home">홈</a> › 교내 버스</div><h1>교내 버스 실시간</h1>' +
+      "<p>충주캠퍼스 주변 정류장이에요. 지도에서 정류장을 누르면 그 정류장에 올 버스가 몇 정거장 전에 있는지, 몇 분 뒤 도착하는지 보여요. 같은 이름의 정류장이 길 양쪽에 있으니 <b>정류장 번호</b>와 위치를 꼭 확인하세요.</p>" +
+      (BUS.notice ? '<p class="hint">' + esc(BUS.notice) + "</p>" : "") + "</div>" +
+      '<div class="bus-layout">' +
+        '<div class="bus-map-wrap"><div id="busMap" class="bus-map" role="application" aria-label="충주캠퍼스 버스 정류장 지도"></div>' +
+          '<div id="busPanel" class="arr-panel" hidden aria-live="polite"></div></div>' +
+        '<aside class="bus-side"><h2>정류장</h2><div id="busList" class="stop-list"><p class="hint">정류장을 불러오는 중…</p></div></aside>' +
+      "</div>" +
+      (BUS.contact ? '<p class="hint bus-contact">버스 문의: ' + esc(BUS.contact) + " · 실시간 정보: 국토교통부 TAGO</p>" : "") +
+    "</div>";
   }
+  function initBusPage() {
+    busSel = null; clearInterval(busTimer); clearInterval(busTick);
+    var listEl = document.getElementById("busList");
+    var el = document.getElementById("busMap");
+    if (busMap) { try { busMap.remove(); } catch (e) {} busMap = null; }
+    makeMap(el).then(function (map) {
+      if (!document.getElementById("busMap")) return map.remove();
+      busMap = map; busMarkers = {};
+      var campus = document.createElement("div");
+      campus.className = "campus-pin"; campus.innerHTML = "<span>한국교통대 충주캠퍼스</span>";
+      map.add(BUS.center, campus, 0);
+      if (!BUS.serviceKey) {
+        listEl.innerHTML = '<p class="hint"><b>실시간 정보를 켜려면 인증키가 필요해요.</b><br>data/bus.js 맨 위 설명대로 공공데이터포털 인증키를 serviceKey에 넣어 주세요.</p>';
+        return;
+      }
+      loadStops().then(function (stops) {
+        if (!document.getElementById("busMap")) return;
+        var norm = function (x) { return String(x || "").replace(/\s+/g, ""); };
+        var hideN = (BUS.hideNames || []).map(norm);
+        stops = stops.filter(function (s) { return (BUS.hide || []).indexOf(s.nodeid) < 0 && hideN.indexOf(norm(s.nodenm)) < 0; })
+          .sort(function (a, b) { return distM(BUS.center, a.pos) - distM(BUS.center, b.pos); });
+        busStops = stops;
+        if (!stops.length) { listEl.innerHTML = '<p class="hint">주변 정류장을 찾지 못했어요.</p>'; return; }
+        stops.forEach(function (s) {
+          var pin = document.createElement("span");
+          pin.className = "stop-pin"; pin.dataset.id = s.nodeid; pin.title = stopName(s);
+          pin.setAttribute("role", "button"); pin.setAttribute("aria-label", stopName(s));
+          pin.innerHTML = STOP_SVG + "<em>" + esc(stopName(s)) + "</em>";
+          pin.addEventListener("click", function (e) { e.stopPropagation(); showStop(s); });
+          busMarkers[s.nodeid] = map.add(s.pos, pin, 2);
+        });
+        map.fit(stops.map(function (s) { return s.pos; }));
+        listEl.innerHTML = '<ul>' + stops.map(function (s) {
+          return '<li><button type="button" class="stop-item" data-stop="' + esc(s.nodeid) + '" aria-pressed="false">' +
+            '<span>' + esc(stopName(s)) + "</span><small>" + (s.nodeno ? "번호 " + esc(s.nodeno) + " · " : "") + Math.round(distM(BUS.center, s.pos)) + "m</small></button></li>";
+        }).join("") + "</ul>";
+        listEl.querySelectorAll("[data-stop]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var s = busStops.filter(function (x) { return x.nodeid === b.dataset.stop; })[0];
+            if (s) { showStop(s); document.getElementById("busMap").scrollIntoView({ behavior: "smooth", block: "start" }); }
+          });
+        });
+      }).catch(function (e) {
+        listEl.innerHTML = '<p class="hint">정류장 정보를 불러오지 못했어요. (' + esc(e.message) + ")<br>인증키가 맞는지, 승인된 지 1~2시간이 지났는지 확인해 주세요.</p>";
+      });
+    }).catch(function () {
+      var el2 = document.getElementById("busMap");
+      if (el2) el2.innerHTML = '<p class="hint" style="padding:16px">지도를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p>';
+    });
+  }
+
 
   /* =============================================================
      2) 학사일정 D-day
@@ -399,6 +654,11 @@
   function inViewer() { try { return window.self !== window.top || !!window.claude; } catch (e) { return true; } }
   if (!inViewer() && "serviceWorker" in navigator && (location.protocol === "https:" || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) {
     window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+    // 새 버전이 올라오면 한 번만 자동으로 새로고침해서 새 화면을 보여 줘요
+    var hadSW = !!navigator.serviceWorker.controller, reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (hadSW && !reloaded) { reloaded = true; location.reload(); }
+    });
   }
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); installEvt = e; });
   window.addEventListener("appinstalled", function () { installEvt = null; if (window.Toast) window.Toast("홈 화면에 추가됐어요!"); });
@@ -415,7 +675,7 @@
   });
 
   window.Features = {
-    busWidgetHTML: busWidgetHTML, busPageHTML: busPageHTML, setBusRoute: function (id) { save("knut-bus-route", id); },
+    busWidgetHTML: busWidgetHTML, busPageHTML: busPageHTML, initBusPage: initBusPage,
     ddayWidgetHTML: ddayWidgetHTML, calendarPageHTML: calendarPageHTML,
     isFav: isFav, toggleFav: toggleFav, favButtonHTML: favButtonHTML, favIds: favIds, onFav: function (fn) { favListeners.push(fn); },
     openStatus: openStatus, openBadgeHTML: openBadgeHTML,

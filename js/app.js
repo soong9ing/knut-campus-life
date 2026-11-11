@@ -89,7 +89,8 @@
       // 밝은 헤더에는 원래 색 로고, 버건디 푸터에는 흰색 로고
       var sigLight = '<img class="brand-sig" src="' + esc(S.logo.src || S.logo.srcOnDark) + '" alt="' + esc(S.logo.alt) + '">';
       var sigDark = '<img class="brand-sig" src="' + esc(S.logo.srcOnDark || S.logo.src) + '" alt="' + esc(S.logo.alt) + '">';
-      document.querySelector(".brand").innerHTML = sigLight + (S.subtitle ? '<span class="brand-sub">' + esc(S.subtitle) + "</span>" : "");
+      // 휴대폰에서는 버건디 헤더라 흰색 로고(brand-sig--dark)를 보여 줘요 (CSS에서 전환)
+      document.querySelector(".brand").innerHTML = sigLight + sigDark.replace('class="brand-sig"', 'class="brand-sig brand-sig--dark"') + (S.subtitle ? '<span class="brand-sub">' + esc(S.subtitle) + "</span>" : "");
       document.querySelector(".footer-brand").innerHTML = sigDark;
     } else {
       document.getElementById("brandLogo").innerHTML = logoHTML();
@@ -97,7 +98,60 @@
     }
     ["brandKo", "footKo"].forEach(function (id) { var e = document.getElementById(id); if (e) e.textContent = S.school.ko; });
     ["brandEn", "footEn"].forEach(function (id) { var e = document.getElementById(id); if (e) e.textContent = S.school.en; });
-    document.getElementById("navSearchInput").placeholder = S.searchPlaceholder;
+    // 휴대폰(760px 이하)에서는 위 작은 검색창에 다 들어가는 짧은 안내 문구
+    var navInput = document.getElementById("navSearchInput");
+    var mq = window.matchMedia("(max-width: 760px)");
+    function setPh() { navInput.placeholder = S.searchPlaceholder; }
+    setPh(); if (mq.addEventListener) mq.addEventListener("change", setPh);
+    // 휴대폰 화면 위쪽(헤더 안) 고정 바로가기: 첫 화면에서 안 보이는 기능 바로가기 (CSS에서 760px 이하일 때만 보여요)
+    var TAB_ICON = {
+      home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7v9h-5.5v-6h-6v6H3.5z"/></svg>',
+      bus: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3.5" width="16" height="14" rx="3"/><path d="M4 11h16M8 17.5V20M16 17.5V20"/><circle cx="8" cy="14.3" r=".9"/><circle cx="16" cy="14.3" r=".9"/></svg>',
+      events: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+      pick: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 4c0 2 2 2 2 4M14 4c0 2 2 2 2 4"/></svg>',
+      notice: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3l6 4V6L7 10z"/><path d="M16.5 9a4 4 0 0 1 0 6"/></svg>',
+      favorites: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12v17l-6-4-6 4z"/></svg>'
+    };
+    var TABS = [["home", "홈"], ["events", "학사일정"], ["notice", "공지사항"], ["favorites", "내 장소"]];
+    var tabBar = document.createElement("nav");
+    tabBar.className = "tab-bar"; tabBar.setAttribute("aria-label", "바로가기");
+    tabBar.innerHTML = TABS.map(function (t) {
+      if (t[0] === "pick") return '<button type="button" data-tab-pick>' + TAB_ICON.pick + "<span>" + t[1] + "</span></button>";
+      return '<a href="#' + t[0] + '" data-nav="' + t[0] + '">' + TAB_ICON[t[0]] + "<span>" + t[1] + "</span></a>";
+    }).join("");
+    document.addEventListener("click", function (e) {
+      if (e.target.closest("[data-home-pick]") && window.Features && Features.openPicker) Features.openPicker();
+    });
+    tabBar.addEventListener("click", function (e) {
+      if (e.target.closest("[data-tab-pick]") && window.Features && Features.openPicker) Features.openPicker();
+    });
+    document.querySelector(".site-header").appendChild(tabBar);
+    // 휴대폰: 위 검색창을 누르면(아직 아무것도 안 썼을 때) 인기 콘텐츠 목록이 아래로 쭉 펼쳐져요
+    var searchPop = document.createElement("div");
+    searchPop.className = "search-pop"; searchPop.hidden = true;
+    document.querySelector(".site-header").appendChild(searchPop);
+    function showSearchPop() {
+      if (!mq.matches || navInput.value.trim()) { searchPop.hidden = true; return; }
+      searchPop.innerHTML = '<p class="search-pop-title">지금 가장 인기있는 콘텐츠</p><ol>' +
+        popularItems(10).map(function (p, i) {
+          return '<li><button type="button" data-review="' + esc(p.it.id) + '"><b>' + (i + 1) + "</b>" +
+            '<span class="badge badge--' + SEC_BADGE[p.sec] + '">' + esc(SECTION_LABEL[p.sec]) + "</span>" +
+            '<span class="sp-name">' + esc(p.it.name) + "</span></button></li>";
+        }).join("") + "</ol>";
+      searchPop.hidden = false;
+    }
+    navInput.addEventListener("focus", showSearchPop);
+    navInput.addEventListener("input", showSearchPop);
+    navInput.addEventListener("blur", function () { setTimeout(function () { searchPop.hidden = true; }, 200); });
+    searchPop.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    searchPop.addEventListener("click", function (e) { if (e.target.closest("[data-review]")) { searchPop.hidden = true; navInput.blur(); } });
+    // 휴대폰: 챗봇 버튼 위에 동그란 "오늘 뭐 먹지" 주사위 버튼 (누르면 뽑기 창)
+    var pickFab = document.createElement("button");
+    pickFab.type = "button"; pickFab.className = "pick-fab"; pickFab.setAttribute("data-tab-pick", "");
+    pickFab.setAttribute("aria-label", "오늘 뭐 먹지? 맛집 뽑기"); pickFab.title = "오늘 뭐 먹지?";
+    pickFab.innerHTML = '<span aria-hidden="true">🎲</span>';
+    pickFab.addEventListener("click", function () { if (window.Features && Features.openPicker) Features.openPicker(); });
+    document.body.appendChild(pickFab);
     document.getElementById("navList").innerHTML = S.nav.map(function (n) {
       return '<li><a href="#' + n.route + '" data-nav="' + n.route + '">' + (n.icon && NAV_ICON[n.icon] ? NAV_ICON[n.icon] : "") + esc(n.label) + "</a></li>";
     }).join("");
@@ -136,7 +190,9 @@
       // ② 히어로
       '<section class="hero" aria-label="소개">' +
         '<div class="hero-stage">' +
-          '<img class="hero-bg" src="' + esc(h.image) + '" alt="손그림 캠퍼스 풍경 일러스트">' +
+          // 휴대폰(760px 이하)에서는 그림 속 검색창을 지운 그림을 보여 줘요
+          '<picture><source media="(max-width: 760px)" srcset="assets/img/hero-campus-m.jpg">' +
+          '<img class="hero-bg" src="' + esc(h.image) + '" alt="손그림 캠퍼스 풍경 일러스트"></picture>' +
           '<div class="hero-content">' +
             // 제목·소개 글씨는 그림에 그려져 있어요. 아래 글자는 검색·화면읽기용으로만 숨겨 둬요.
             '<div class="sr-only"><p>' + esc(h.tag) + "</p>" +
@@ -160,6 +216,8 @@
               "<h3>" + esc(c.title) + "</h3>" +
               "<p>" + lines(c.desc) + "</p>" + arrowDot() + "</a>";
           }).join("") +
+          // 휴대폰에서만 보이는 "교내 버스" 메뉴 (버스 시간표 화면으로)
+          '<a class="menu-card menu-card--pick" href="#bus"><img src="assets/img/menu-bus.svg" alt=""><h3>교내 버스</h3><p><span>999·700번</span><span>실시간 도착 보기</span></p>' + arrowDot() + '</a>' +
         "</section>" +
 
         // ④ 지도 카드 · 공지사항 · 배너 (시안 아래 줄)
@@ -169,7 +227,7 @@
           (b ? '<a class="banner" href="#' + b.route + '"><img src="' + esc(b.image) + '" alt=""><span class="sr-only">' + esc(b.lines.join(" ")) + " · " + esc(b.button) + "</span></a>" : "") +
         "</section>" +
 
-        // 오늘의 캠퍼스: 다음 버스 · D-day · 오늘 뭐 먹지
+        // 오늘의 캠퍼스: 교내 버스(지도·실시간) · D-day · 오늘 뭐 먹지
         (window.Features ? '<section class="fw-row" aria-label="오늘의 캠퍼스">' + Features.busWidgetHTML() + Features.ddayWidgetHTML() + Features.pickWidgetHTML() + "</section>" : "") +
 
         // ⑤ 인기 콘텐츠
@@ -211,8 +269,8 @@
 
   /* ---------- 인기 콘텐츠: 조회수 많은 정보 ---------- */
   var SEC_BADGE = { hidden: "green", food: "burgundy", tips: "orange", etc: "pink" };
-  function popularItems() {
-    var Soc = window.Social, n = (S.popular && S.popular.count) || 5, ids = [], seenIds = {};
+  function popularItems(nWant) {
+    var Soc = window.Social, n = nWant || (S.popular && S.popular.count) || 5, ids = [], seenIds = {};
     if (Soc) Soc.topViewed(n).forEach(function (id) { if (PLACE_BY_ID[id]) { ids.push(id); seenIds[id] = true; } });
     // 조회 기록이 모자라면 추천인 수가 많은 순으로 채워요
     if (ids.length < n) {
@@ -459,6 +517,7 @@
     }
   });
   if (window.Social) window.Social.onChange(refreshSocial);
+  window.openPlaceModal = openModal;  // 맛집 지도(js/foodmap.js)에서 핀을 누르면 이 상세 창을 열어요
 
   /* ---------- 목록 화면 (맛집·생활꿀팁·숨은장소·자유) ---------- */
   function uniq(arr) { var o = []; arr.forEach(function (v) { if (v && o.indexOf(v) < 0) o.push(v); }); return o; }
@@ -764,8 +823,10 @@
       : route === "events" ? (window.Features ? Features.calendarPageHTML() : eventsHTML())
       : route === "bus" && window.Features ? Features.busPageHTML()
       : route === "favorites" ? favoritesHTML()
+      : route === "food" && window.FoodMap ? FoodMap.html()  // 맛집: 지도 화면 (js/foodmap.js)
       : listHTML(route);
     app.innerHTML = html;
+    document.body.setAttribute("data-route", route);
     document.querySelectorAll("[data-nav]").forEach(function (a) {
       if (a.dataset.nav === route) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
     });
@@ -773,22 +834,7 @@
     if (keepScroll === true) window.scrollTo(0, y); else window.scrollTo(0, 0);
   }
   function bind(route) {
-    if (route === "home-bus") {  // 버스 위젯만 다시 그렸을 때
-      var bs2 = document.getElementById("fwBusSel");
-      if (bs2) bs2.addEventListener("change", function () {
-        Features.setBusRoute(bs2.value);
-        document.getElementById("fwBus").outerHTML = Features.busWidgetHTML(); bind("home-bus");
-        var a2 = document.getElementById("fwBusSel"); if (a2) a2.focus();
-      });
-      return;
-    }
     if (route === "home") {
-      var bs = document.getElementById("fwBusSel");
-      if (bs) bs.addEventListener("change", function () {
-        Features.setBusRoute(bs.value);
-        var box = document.getElementById("fwBus"); box.outerHTML = Features.busWidgetHTML(); bind("home-bus");
-        var again = document.getElementById("fwBusSel"); if (again) again.focus();
-      });
       var po = document.getElementById("fwPickOpen");
       if (po) po.addEventListener("click", function () { Features.openPicker(); });
       document.getElementById("heroSearch").addEventListener("submit", function (e) {
@@ -806,6 +852,8 @@
           if (st) { st.cat = "전체"; st.sub = "전체"; st.area = "전체"; st.q = ""; }
         });
       });
+    } else if (route === "food" && window.FoodMap) {
+      FoodMap.bind(app);
     } else if (state.list[route]) {
       bindList(route);
     } else if (route === "map") {
@@ -831,6 +879,8 @@
           st.cat = "전체"; st.sub = "전체"; st.area = "전체"; st.q = a.dataset.name;
         });
       });
+    } else if (route === "bus") {
+      if (window.Features) Features.initBusPage();
     } else if (route === "search") {
       document.getElementById("searchAgain").addEventListener("submit", function (e) {
         e.preventDefault(); state.query = document.getElementById("searchAgainInput").value.trim(); render(true);
@@ -846,11 +896,6 @@
     }
   }
 
-  // 홈의 '다음 버스'를 1분마다 새로 계산해요
-  setInterval(function () {
-    var box = document.getElementById("fwBus");
-    if (box && window.Features && !box.contains(document.activeElement)) { box.outerHTML = Features.busWidgetHTML(); bind("home-bus"); }
-  }, 60000);
   initChrome();
   window.addEventListener("hashchange", function () { render(); });
   render(true);

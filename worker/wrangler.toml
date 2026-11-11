@@ -1,0 +1,12 @@
+# Cloudflare Workers 설정 (챗봇 서버)
+# 배포: 이 폴더(worker)에서  npx wrangler deploy
+# API 키는 여기 적지 말고  npx wrangler secret put GEMINI_API_KEY  로 넣어요.
+name = "knut-campus-chatbot"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+# 앞 모델이 혼잡하거나 한도가 끝나면 다음 모델로 넘어가요 (쉼표로 구분)
+GEMINI_MODEL = "gemini-flash-latest,gemini-flash-lite-latest,gemini-2.5-flash,gemini-2.5-flash-lite"
+# 챗봇을 쓸 수 있는 사이트 주소 (쉼표로 구분). 사이트 주소가 바뀌면 여기도 바꿔요.
+ALLOWED_ORIGINS = "https://soong9ing.github.io,http://localhost:8000,http://127.0.0.1:8000"

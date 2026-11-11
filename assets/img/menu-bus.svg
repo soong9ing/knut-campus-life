@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 373 203" width="373" height="203">
+  <!-- 교내 버스 메뉴 그림: 다른 메뉴 그림처럼 굵은 검정 테두리 + 파스텔 색 -->
+  <g stroke="#1d1d1f" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+    <!-- 바닥 잔디 -->
+    <path d="M14 186 H359" fill="none"/>
+    <rect x="12" y="180" width="349" height="12" rx="6" fill="#bfe08a" stroke="none"/>
+    <!-- 왼쪽 덤불 -->
+    <path d="M20 182 C10 160 26 140 44 146 C48 128 74 128 78 146 C96 142 104 166 92 182 Z" fill="#8ccf5a"/>
+    <!-- 버스 몸통 -->
+    <rect x="86" y="30" width="206" height="136" rx="22" fill="#f6c9b4"/>
+    <!-- 위쪽 띠 -->
+    <path d="M88 64 H290" fill="none"/>
+    <rect x="128" y="40" width="122" height="16" rx="6" fill="#ffffff"/>
+    <!-- 창문 -->
+    <rect x="104" y="76" width="50" height="40" rx="6" fill="#7dc8ee"/>
+    <rect x="164" y="76" width="50" height="40" rx="6" fill="#7dc8ee"/>
+    <rect x="224" y="76" width="50" height="40" rx="6" fill="#7dc8ee"/>
+    <!-- 아래 띠 -->
+    <path d="M88 132 H290" fill="none"/>
+    <!-- 전조등 -->
+    <circle cx="112" cy="148" r="8" fill="#fff3a6"/>
+    <circle cx="266" cy="148" r="8" fill="#fff3a6"/>
+    <!-- 바퀴 -->
+    <circle cx="132" cy="170" r="17" fill="#3a3a3c"/>
+    <circle cx="246" cy="170" r="17" fill="#3a3a3c"/>
+    <circle cx="132" cy="170" r="6" fill="#d9d9d9" stroke-width="3"/>
+    <circle cx="246" cy="170" r="6" fill="#d9d9d9" stroke-width="3"/>
+    <!-- 오른쪽 덤불 -->
+    <path d="M300 182 C290 162 304 144 322 150 C328 132 352 134 354 152 C368 152 372 172 362 182 Z" fill="#8ccf5a"/>
+  </g>
+  <!-- 노선 번호 -->
+  <text x="189" y="53" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="14" fill="#8d1f35">999 · 700</text>
+</svg>
