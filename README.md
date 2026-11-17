@@ -29,6 +29,7 @@
 | 교내 버스(지도·실시간 도착)·D-day·오늘 뭐 먹지·영업 중 표시 | `js/features.js` | 동작 | 동작 |
 | 맛집 지도 (핀·필터·내 위치·뭐 먹지) | `js/foodmap.js`, `css/foodmap.css`, `data/foodmap.js` | 지도 안 보일 수 있음 | 동작 (`FOODMAP_CHANGES.md`) |
 | 휴대폰 화면 (위 바로가기 탭·인기 검색·🎲 뽑기 버튼·교내 버스 메뉴) | `js/app.js`, `css/style.css` | 동작 | 동작 |
+| 로그인·회원가입·회원 등급·커뮤니티 게시판 | `js/community.js`, `css/community.css`, `worker/community.js` (`COMMUNITY_CHANGES.md`) | 서버 연결 안 됨 | 동작 (Cloudflare D1) |
 | 즐겨찾기(내 장소) | `js/features.js` | 이 브라우저에 저장 | 이 브라우저에 저장 |
 | 정보 수정 요청 | `js/features.js` | 사이트 저장소(reports)에 모임 | `reportFormUrl`에 구글 폼을 넣으면 보임 |
 | 홈 화면에 추가(푸터 마스코트 클릭) | `manifest.webmanifest`, `sw.js` | 안 됨 | 동작 |

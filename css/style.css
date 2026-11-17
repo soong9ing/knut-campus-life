@@ -1265,3 +1265,111 @@ a.fw-bus:hover, a.fw-bus:focus-visible { border-color: var(--wine); transform: t
 .hero-card--brand .hero-search button { width: calc(var(--u) * 35); height: calc(var(--u) * 35); margin-right: calc(var(--u) * -3); }
 .hero-card--brand .hero-search button svg { width: calc(var(--u) * 15); height: calc(var(--u) * 15); }
 .hero-card--brand { width: calc(var(--u) * 330); } .hero-card--brand .hero-search input { font-size: max(11px, calc(var(--u) * 9)); }
+/* 홈 아래 세 칸(학사일정 · 실시간 버스 · 오늘 뭐 먹지) 모두 같은 따뜻한 색 */
+.fw-row .fw-card { background: #fff7ec; }
+.fm-open-btn { height: 38px; font-size: 14px; text-decoration: none; }
+
+/* 메모 목록: ">"로 시작한 줄을 가운데 점(·) 목록으로 */
+.note .note-p { display: block; white-space: pre-line; }
+.note .note-list { list-style: none; margin: 0; padding: 0; white-space: normal; }
+.note .note-list li { position: relative; padding-left: 14px; }
+.note .note-list li::before { content: "·"; position: absolute; left: 2px; top: 0; font-weight: 900; color: var(--title); }
+.note .note-p + .note-list, .note .note-list + .note-p { margin-top: 4px; }
+
+/* 2026-11-17: 웹(넓은 화면)에서도 검색창을 누르면 인기 콘텐츠 목록이 펼쳐져요 (js/app.js의 floatPop) */
+.search-pop--float:not([hidden]) {
+  display: block; position: absolute; z-index: 70; max-height: 70vh; overflow-y: auto; padding: 12px 10px 10px;
+  background: var(--white); border: 1px solid var(--card-line); border-radius: 16px; box-shadow: 0 14px 34px rgba(117, 36, 50, 0.2);
+  animation: spDrop 0.16s ease-out;
+}
+@keyframes spDrop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.search-pop--float .search-pop-title { margin: 0 8px 8px; font: 700 13px/1.3 var(--f-body); color: var(--title); }
+.search-pop--float ol { margin: 0; padding: 0; list-style: none; }
+.search-pop--two ol { display: grid; grid-auto-flow: column; grid-template-rows: repeat(5, auto); grid-template-columns: 1fr 1fr; column-gap: 8px; }
+.search-pop--float button {
+  width: 100%; display: flex; align-items: center; gap: 8px; padding: 9px 8px; border: 0; border-radius: 10px;
+  background: none; text-align: left; font: 500 14px/1.3 var(--f-body); color: var(--ink); cursor: pointer;
+}
+.search-pop--float button:hover, .search-pop--float button.is-sel { background: var(--notice); }
+.search-pop--float b { flex: none; width: 18px; font: 400 17px/1 var(--f-display); color: var(--title); text-align: center; }
+.search-pop--float .badge { flex: none; font-size: 10.5px; padding: 2px 6px; }
+.search-pop--float .sp-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-pop--float .sp-views { flex: none; margin-left: auto; font-size: 11.5px; color: var(--muted, #7d6d70); }
+
+/* 2026-11-17: 장소 추가 신청 (js/addplace.js) — 숨은장소·맛집·생활꿀팁 오른쪽 위 ＋ 버튼과 신청 창 */
+.page-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.page-title-row h1 { min-width: 0; }
+.add-btn {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; height: 40px; margin-top: 6px; padding: 0 18px 0 14px;
+  border-radius: 999px; background: var(--wine); color: var(--white); font: 700 14px/1 var(--f-body); cursor: pointer;
+  box-shadow: 0 3px 8px rgba(141, 31, 53, 0.25); transition: filter 0.15s, transform 0.15s;
+}
+.add-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.add-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+/* 휴대폰: ＋ 만 보이는 동그란 버튼 */
+@media (max-width: 760px) {
+  .add-btn { width: 40px; height: 40px; padding: 0; justify-content: center; }
+  .add-btn span { display: none; }
+  .add-btn svg { width: 20px; height: 20px; }
+}
+
+.ap-modal .modal-card { width: min(600px, 100%); max-height: min(90vh, 860px); }
+.ap-lead { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+.ap-warn { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--notice); border: 1px solid var(--notice-line); font-size: 13px; color: var(--ink); }
+.ap-form { margin-top: 16px; display: grid; gap: 14px; }
+.ap-field { display: grid; gap: 6px; min-width: 0; }
+.ap-field > label { font: 700 14px/1.3 var(--f-body); color: var(--ink); }
+.ap-req, .ap-opt { font-style: normal; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 999px; margin-left: 4px; vertical-align: 1px; }
+.ap-req { background: var(--wine); color: var(--white); }
+.ap-opt { background: var(--card); color: var(--muted); }
+.ap-field input[type="text"], .ap-field input[type="url"], .ap-field input[type="date"], .ap-field textarea, .ap-field .select {
+  width: 100%; min-width: 0; height: 44px; padding: 0 14px; border: 1.5px solid var(--card-line); border-radius: 12px;
+  background: var(--white); font: 15px/1.4 var(--f-body); color: var(--ink); outline: none;
+}
+.ap-field .select { border-radius: 12px; }
+.ap-field textarea { height: auto; min-height: 96px; padding: 10px 14px; resize: vertical; line-height: 1.6; }
+.ap-field input:focus, .ap-field textarea:focus, .ap-field .select:focus { border-color: var(--wine); }
+.ap-field.is-err input, .ap-field.is-err textarea, .ap-field.is-err .select { border-color: #d0453a; background: #fff6f5; }
+.ap-help { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.ap-err { margin: 0; font-size: 12.5px; font-weight: 700; color: #c23b30; }
+.ap-err:empty { display: none; }
+.ap-err.is-soft { color: #8a6a00; font-weight: 500; }
+.ap-row { display: flex; gap: 8px; }
+.ap-row input { flex: 1; }
+.ap-find {
+  flex: none; display: inline-flex; align-items: center; height: 44px; padding: 0 14px; border-radius: 12px;
+  background: #03c75a; color: #fff; font: 700 13px/1 var(--f-body); white-space: nowrap;
+}
+.ap-find:hover { filter: brightness(1.05); }
+.ap-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ap-count { margin: 0; text-align: right; font-size: 12px; color: var(--soft); }
+.ap-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.ap-foot { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding-top: 4px; }
+.ap-foot .pill-btn { height: 44px; padding: 0 28px; font-size: 15px; }
+.ap-foot .pill-btn:disabled { opacity: 0.6; cursor: wait; }
+.ap-done { text-align: center; padding: 24px 6px 10px; }
+.ap-done-ic { font-size: 48px; }
+.ap-done h2 { margin: 8px 0 0 !important; }
+.ap-done p { margin: 10px 0 20px; color: var(--muted); line-height: 1.6; }
+.ap-done .pill-btn { height: 44px; padding: 0 32px; }
+@media (max-width: 520px) {
+  .ap-two { grid-template-columns: 1fr; }
+  .ap-row { flex-direction: column; }
+  .ap-row input { flex: none; }
+  .ap-find { justify-content: center; }
+}
+/* 2026-11-17: 맛집 = 목록 + [지도에서 보기] (지도 화면은 #foodmap) */
+.head-btns { flex: none; display: flex; align-items: center; gap: 8px; }
+.map-view-btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 40px; margin-top: 6px; padding: 0 16px 0 13px; border-radius: 999px;
+  background: var(--white); color: var(--wine); border: 1.5px solid var(--wine); font: 700 14px/1 var(--f-body); transition: background 0.15s;
+}
+.map-view-btn:hover { background: var(--notice); }
+.map-view-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+@media (max-width: 760px) {
+  .map-view-btn { height: 36px; padding: 0 12px 0 10px; font-size: 13px; }
+  .head-btns { gap: 6px; }
+}
+
+.item-actions { flex-wrap: wrap; row-gap: 6px; }
+.item-actions > * { white-space: nowrap; }

@@ -13,6 +13,32 @@ window.SITE = {
   // GitHub 사이트에서는 이 주소가 있을 때만 제보 버튼이 보여요. {place}, {text}를 넣으면 미리 채워져요.
   reportFormUrl: "",
 
+  // 장소 추가 신청 (숨은장소·맛집·생활꿀팁 화면 오른쪽 위 ＋ 버튼) — js/addplace.js
+  //  - 학생이 신청 → 구글 폼 응답 시트에 한 줄씩 쌓임 → 관리자가 '승인' 칸에 O → 사이트에 자동으로 보임
+  //  - formAction: 구글 폼 주소의 끝 viewform 을 formResponse 로 바꾼 주소
+  //  - entries: 폼 질문마다 붙는 번호(entry.숫자). 폼의 '미리 채워진 링크 받기'로 확인해요.
+  //  - sheetCsv: 응답 시트 [파일 → 공유 → 웹에 게시 → CSV] 주소. 시트 맨 오른쪽에 '승인' 열을 추가해 주세요.
+  //    (맛집은 '위도', '경도' 열에 숫자를 넣으면 지도에 핀도 찍혀요. 비워 두면 목록에만 보여요.)
+  //  - 비어 있으면 신청 창은 열리지만 "아직 신청을 받을 준비 중" 안내가 떠요.
+  addPlace: {
+    formAction: "https://docs.google.com/forms/d/e/1FAIpQLSfNXBmO3qvulBgB6qGhlWrZWFZYqEhroWduMFStj3vuAl74DA/formResponse",
+    entries: {
+      section: "entry.1862937334",
+      category: "entry.1514622725",
+      subcategory: "entry.78486908",
+      name: "entry.892045561",
+      address: "entry.1565559851",
+      detail: "entry.793590284",
+      map: "entry.612176644",
+      checkedAt: "entry.869722689",
+      area: "entry.2138986741",
+      menu: "entry.1423467763",
+      price: "entry.725234410",
+      note: "entry.1483888024"
+    },
+    sheetCsv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRHRY8BbjslwIDm44Wtw2D6siLNywbUGalcmVyEvmED1K45gffPfVA-XKrzokHrWBf1QZUo_Dqh6jps/pub?gid=1482512037&single=true&output=csv"
+  },
+
   // 로고: 학교 UI 가이드의 "시그니처 국/영문 가로형" (엠블럼+국문+영문이 한 덩어리)
   //  - srcOnDark: 버건디 배경(네비·푸터)용 흰색 버전, src: 원래 색 버전
   //  - 규정상 요소를 따로 떼거나 비율을 바꾸지 말고 통째로 정비례 축소·확대해서 써요.
@@ -25,7 +51,7 @@ window.SITE = {
     { label: "홈", route: "home" },
     { label: "캠퍼스 지도", route: "map" },
     { label: "숨은장소", route: "hidden" },
-    { label: "맛집", route: "food" },
+    { label: "맛집", route: "foodmap" },  // 맛집은 지도부터 보여 줘요 (지도 위 [목록]을 누르면 #food 목록)
     { label: "생활꿀팁", route: "tips" },
     { label: "커뮤니티", route: "community" }
   ],
@@ -54,7 +80,7 @@ window.SITE = {
   menuCards: [
     { title: "캠퍼스 지도", desc: ["건물·시설·편의시설을", "한눈에 보기"], img: "assets/img/menu-1.png", route: "map" },
     { title: "숨은장소", desc: ["조용하고 특별한", "우리 캠퍼스의 숨은 명소"], img: "assets/img/menu-2.png", route: "hidden" },
-    { title: "맛집", desc: ["학생들이 추천하는", "캠퍼스 근처 맛집"], img: "assets/img/menu-3.png", route: "food" },
+    { title: "맛집", desc: ["학생들이 추천하는", "캠퍼스 근처 맛집"], img: "assets/img/menu-3.png", route: "foodmap" },
     { title: "생활꿀팁", desc: ["알아두면 유용한", "대학생활 꿀팁 모음"], img: "assets/img/menu-4.png", route: "tips" },
     { title: "커뮤니티", desc: ["함께 나누는", "캠퍼스 이야기"], img: "assets/img/menu-5.png", route: "community" }
   ],

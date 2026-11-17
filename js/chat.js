@@ -197,7 +197,7 @@
   var DETAIL_MAX = 25;   // 자세히 보내는 장소 수
   function detailLine(p) {
     var it = p.it;
-    var note = String(it.note || "").split("\n").filter(function (l) { return !/^(참고|txt|전화|https?:)/.test(l); }).join(" / ");
+    var note = String(it.note || "").split("\n").map(function (l) { return l.replace(/^\s*>\s?/, ""); }).filter(function (l) { return !/^(참고|txt|전화|https?:)/.test(l); }).join(" / ");
     if (note.length > 260) note = note.slice(0, 258) + "…";
     return [it.id, SEC[p.sec], it.category, it.subcategory || "", it.name, it.area || "", it.location || "", it.price || "", "추천" + (it.recommend || 1), note].join(" | ");
   }

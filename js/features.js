@@ -451,7 +451,7 @@
   var hoursCache = {};
   function parseHours(it) {
     if (hoursCache[it.id] !== undefined) return hoursCache[it.id];
-    var lines = String(it.note || "").split("\n");
+    var lines = String(it.note || "").split("\n").map(function (l) { return l.replace(/^\s*>\s?/, ""); });
     var spec = { ranges: [], breaks: [], closed: [], always: false, uncertain: false };
     var found = false;
     lines.forEach(function (line) {
@@ -606,7 +606,7 @@
     box.innerHTML = '<div class="pick-hit"><p class="pick-meta">' + esc([it.subcategory || it.category, it.area].filter(Boolean).join(" · ")) + "</p>" +
       "<h3>" + esc(it.name) + "</h3>" + openBadgeHTML(it) +
       (it.price ? '<p class="meta"><b>가격</b> ' + esc(it.price) + "</p>" : "") +
-      '<p class="pick-note">' + esc(String(it.note || "").split("\n")[0]) + "</p>" +
+      '<p class="pick-note">' + esc(String(it.note || "").split("\n")[0].replace(/^\s*>\s?/, "")) + "</p>" +
       '<button type="button" class="text-btn" data-review="' + esc(it.id) + '" data-close-pick>자세히 보기 →</button></div>';
     box.querySelector("[data-close-pick]").addEventListener("click", function () { dlg.hidden = true; });
   }

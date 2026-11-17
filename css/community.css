@@ -1,0 +1,99 @@
+/* =============================================================
+   로그인 · 커뮤니티 · 회원 등급 (js/community.js)
+   색·글꼴은 css/style.css 의 :root 변수를 그대로 써요.
+   ============================================================= */
+
+/* 회원 등급 배지 (1 새내기 ~ 5 교통정리 마스터) */
+.grade { display: inline-flex; align-items: center; gap: 3px; padding: 2px 9px 3px; border-radius: 999px; font: 400 12px/1.3 var(--f-display); white-space: nowrap; vertical-align: middle; }
+.grade--l1 { background: var(--lime); color: #3d6b1f; }
+.grade--l2 { background: var(--sky); color: #2d5f7b; }
+.grade--l3 { background: var(--butter); color: #8a5a00; }
+.grade--l4 { background: var(--mint); color: #24604a; box-shadow: inset 0 0 0 1px #9fd6be; }
+.grade--l5 { background: var(--wine); color: var(--white); box-shadow: 0 2px 6px rgba(141, 31, 53, 0.3); }
+.grade--big { padding: 5px 14px 6px; font-size: 17px; }
+
+/* 헤더 사람 아이콘: 로그인하면 작은 점 */
+.user-btn { position: relative; }
+.user-btn.is-in::after { content: ""; position: absolute; right: 0; bottom: 1px; width: 9px; height: 9px; border-radius: 50%; background: var(--b-green); box-shadow: 0 0 0 2px var(--header-bg); }
+
+/* 로그인·내 정보 창 */
+.cm-modal .modal-card { max-width: 440px; }
+.cm-modal h2 small.cm-id { font: 400 14px var(--f-body); color: var(--soft); }
+.cm-tabs { margin-top: 14px; display: flex; gap: 6px; padding: 4px; background: var(--card); border: 1px solid var(--card-line); border-radius: 999px; }
+.cm-tabs button { flex: 1; height: 36px; border-radius: 999px; font-weight: 700; font-size: 14px; color: var(--muted); }
+.cm-tabs button[aria-selected="true"] { background: var(--wine); color: var(--white); }
+.cm-form { margin-top: 14px; display: grid; gap: 12px; }
+.cm-field { display: grid; gap: 5px; font-size: 14px; font-weight: 700; color: var(--ink); }
+.cm-field small { font-weight: 400; color: var(--soft); font-size: 12px; }
+.cm-field input { height: 42px; padding: 0 14px; border: 1.5px solid var(--card-line); border-radius: 10px; background: var(--white); font-size: 15px; font-weight: 400; }
+.cm-field input:focus, .cm-page textarea:focus, .cm-page input:focus, .cm-page select:focus { outline: 2px solid var(--wine); outline-offset: 1px; border-color: transparent; }
+.cm-form .pill-btn { height: 44px; font-size: 15px; }
+.cm-msg { margin: 0; font-size: 13px; color: var(--b-coral); font-weight: 700; }
+.cm-msg:empty { display: none; }
+
+.cm-me { margin-top: 14px; padding: 16px; display: grid; gap: 10px; justify-items: start; background: var(--card); border: 1px solid var(--card-line); border-radius: 14px; }
+.cm-score { margin: 0; color: var(--muted); font-size: 14px; }
+.cm-score b { color: var(--title); font-size: 18px; }
+.cm-bar { width: 100%; height: 10px; border-radius: 999px; background: var(--white); border: 1px solid var(--card-line); overflow: hidden; }
+.cm-bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--b-orange), var(--wine)); transition: width 0.4s; }
+.cm-stats { margin: 12px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.cm-stats li { padding: 10px 6px; text-align: center; background: var(--white); border: 1px solid var(--card-line); border-radius: 12px; display: grid; gap: 2px; }
+.cm-stats b { font: 400 22px/1.1 var(--f-display); color: var(--title); }
+.cm-stats span { font-size: 12px; color: var(--muted); }
+.cm-tiers { margin-top: 12px; font-size: 13.5px; color: var(--muted); }
+.cm-tiers summary { cursor: pointer; font-weight: 700; color: var(--title); }
+.cm-tiers p { margin: 8px 0; line-height: 1.6; }
+.cm-tiers ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.cm-tiers li { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 10px; }
+.cm-tiers li.is-now { background: var(--notice); outline: 1px solid var(--notice-line); }
+.cm-tiers li small { color: var(--soft); }
+.cm-actions { margin-top: 14px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.cm-actions .chip { margin-left: auto; }
+
+/* 커뮤니티 화면 */
+.cm-loading { padding: 40px 0; text-align: center; color: var(--muted); }
+.cm-page .write-box textarea { width: 100%; padding: 12px 14px; border: 1.5px solid var(--card-line); border-radius: 10px; background: var(--white); font: 14px/1.6 var(--f-body); resize: vertical; }
+.cm-as { margin-left: 6px; font-weight: 400; font-size: 13px; color: var(--muted); }
+.cm-write-foot { justify-content: flex-end; align-items: center; }
+.cm-write-foot .cm-msg { flex: 1; }
+.cm-login-box { grid-template-columns: 1fr auto; align-items: center; }
+.cm-login-box p { margin: 0; }
+
+.cm-row { color: inherit; text-decoration: none; transition: background 0.15s; }
+.cm-row:hover { background: var(--notice); }
+.cm-row-main { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.cm-row-main strong { font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.cm-cc { font-style: normal; color: var(--b-coral); font-weight: 700; font-size: 13px; }
+.cm-row-meta { margin: 0; font-size: 12.5px; color: var(--soft); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.cm-who b { color: var(--muted); font-weight: 500; }
+.cm-like-n { color: var(--b-pink); font-weight: 700; }
+.cm-more { margin: 14px 0 0; text-align: center; }
+
+.cm-post { margin-top: 20px; padding: 22px 24px; background: var(--paper); border: 1px solid var(--card-line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.cm-back { margin: 0 0 12px; }
+.cm-post h2 { margin: 10px 0 6px; font: 400 28px/1.3 var(--f-display); color: var(--title); overflow-wrap: anywhere; }
+.cm-post-meta { margin: 0; font-size: 13px; color: var(--soft); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.cm-post-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--card-line); font-size: 15px; line-height: 1.75; white-space: pre-line; overflow-wrap: anywhere; color: var(--ink); }
+.cm-post-tools { margin-top: 18px; display: flex; align-items: center; gap: 14px; }
+.cm-like { height: 38px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--card-line); background: var(--white); color: var(--b-pink); font-weight: 700; font-size: 14px; transition: background 0.15s, color 0.15s; }
+.cm-like:hover { border-color: var(--b-pink); }
+.cm-like.is-on { background: var(--b-pink); border-color: var(--b-pink); color: var(--white); }
+.cm-like:disabled { opacity: 0.6; }
+.cm-del { color: var(--soft); }
+.cm-del:hover { color: var(--b-coral); }
+
+.cm-comments { margin-top: 26px; }
+.cm-comments h3 { margin: 0; font: 400 22px var(--f-display); color: var(--title); }
+.cm-comments h3 .count { color: var(--b-coral); }
+.cm-comments .board { margin-top: 12px; padding: 0; list-style: none; }
+.cm-comment > div { flex: 1; min-width: 0; }
+.cm-comment-body { margin: 6px 0 0; font-size: 14.5px; line-height: 1.65; white-space: pre-line; overflow-wrap: anywhere; }
+.cm-cform { margin-top: 14px; }
+
+@media (max-width: 640px) {
+  .cm-post { padding: 18px 16px; }
+  .cm-post h2 { font-size: 23px; }
+  .cm-row { align-items: flex-start; gap: 10px; padding: 14px 16px; }
+  .cm-login-box { grid-template-columns: 1fr; }
+  .cm-stats b { font-size: 19px; }
+}

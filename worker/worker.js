@@ -11,6 +11,8 @@
      GEMINI_MODEL     (선택) 기본 gemini-flash-latest
      ALLOWED_ORIGINS  (선택) 챗봇을 쓸 수 있는 사이트 주소, 쉼표로 구분
    ============================================================= */
+import { handleCommunity } from "./community.js";   // 회원·커뮤니티 (worker/community.js)
+
 const DEFAULT_API = "https://generativelanguage.googleapis.com/v1beta";
 const MAX_BODY = 200 * 1024;      // 요청 최대 200KB
 const MAX_SYSTEM = 120 * 1024;    // 사이트 정보 최대 120KB
@@ -27,8 +29,8 @@ function allowedOrigin(req, env) {
 function cors(origin) {
   return origin ? {
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin"
   } : {};
@@ -143,6 +145,9 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { status: origin ? 204 : 403, headers: cors(origin) });
     // 허락한 사이트에서 온 요청만 받아요 (다른 사이트가 우리 키를 쓰지 못하게)
     if (!origin) return json(403, { error: "forbidden_origin" }, "");
+    // 회원·커뮤니티 (/api/auth/*, /api/community/*)
+    const community = await handleCommunity(req, env, new URL(req.url), (status, obj) => json(status, obj, origin));
+    if (community) return community;
     if (req.method !== "POST") return json(405, { error: "method" }, origin);
     if (path === "/api/health") return env.GEMINI_API_KEY ? json(200, { ok: true }, origin) : json(503, { ok: false, error: "no_key" }, origin);
     if (path === "/api/chat") {

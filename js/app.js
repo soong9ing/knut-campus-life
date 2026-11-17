@@ -8,7 +8,7 @@
   var S = window.SITE || {};
   var P = window.PLACES || { food: [], tips: [], hidden: [], etc: [] };
   var app = document.getElementById("app");
-  var ROUTES = ["home", "map", "hidden", "food", "tips", "community", "etc", "notice", "events", "search", "bus", "favorites"];
+  var ROUTES = ["home", "map", "hidden", "food", "tips", "community", "etc", "notice", "events", "search", "bus", "favorites", "foodmap"];
   var SECTION_LABEL = { food: "맛집", tips: "생활꿀팁", hidden: "숨은장소", etc: "자유" };
 
   // 화면별 필터 상태 (페이지 안에서만 기억)
@@ -36,6 +36,21 @@
       return '<a href="' + u + '" target="_blank" rel="noopener">' + (u.length > 48 ? u.slice(0, 45) + "…" : u) + "</a>";
     });
   }
+  // 메모: ">"로 시작하는 줄은 가운데 점(·) 목록으로, 나머지 줄은 그대로 보여 줘요
+  function noteHTML(note) {
+    var out = [], list = [], text = [];
+    function flushList() { if (list.length) { out.push('<ul class="note-list">' + list.join("") + "</ul>"); list = []; } }
+    function flushText() { if (text.length) { out.push('<span class="note-p">' + text.join("\n") + "</span>"); text = []; } }
+    String(note || "").split("\n").forEach(function (l) {
+      var m = l.match(/^\s*>\s?(.*)$/);
+      if (m) { flushText(); list.push("<li>" + linkify(m[1]) + "</li>"); }
+      else if (l.trim()) { flushList(); text.push(linkify(l)); }
+    });
+    flushText(); flushList();
+    return out.join("");
+  }
+  function noteFirst(note) { return String(note || "").split("\n").map(function (x) { return x.replace(/^\s*>\s?/, ""); }).filter(Boolean)[0] || ""; }
+  window.noteHTML = noteHTML;
   function lines(arr) { return (arr || []).map(function (l) { return "<span>" + esc(l) + "</span>"; }).join(""); }
   function tmp(on) { return on ? ' <span class="tmp-flag" title="임시 콘텐츠: data/site.js에서 실제 내용으로 바꿔 주세요">임시</span>' : ""; }
   var ICON = {
@@ -145,6 +160,61 @@
     navInput.addEventListener("blur", function () { setTimeout(function () { searchPop.hidden = true; }, 200); });
     searchPop.addEventListener("mousedown", function (e) { e.preventDefault(); });
     searchPop.addEventListener("click", function (e) { if (e.target.closest("[data-review]")) { searchPop.hidden = true; navInput.blur(); } });
+    // 넓은 화면(웹): 홈 그림 속 큰 검색창·검색 결과 화면 검색창을 누르면 인기 콘텐츠 목록이 아래로 펼쳐져요 (2026-11-17)
+    // 앱의 검색창처럼: 아직 아무것도 안 썼을 때만 보이고, 글자를 쓰기 시작하면 사라져요. ↑↓ 키로 고르고 Enter로 열기, Esc로 닫기.
+    var floatPop = document.createElement("div");
+    floatPop.className = "search-pop search-pop--float"; floatPop.hidden = true;
+    floatPop.setAttribute("role", "listbox"); floatPop.setAttribute("aria-label", "지금 가장 인기있는 콘텐츠");
+    document.body.appendChild(floatPop);
+    var floatFor = null, floatSel = -1;
+    function placeFloat() {
+      if (!floatFor || floatPop.hidden) return;
+      var box = (floatFor.closest(".hero-search, .mini-search") || floatFor).getBoundingClientRect();
+      var w = Math.min(Math.max(box.width, 380), window.innerWidth - 24);
+      var left = Math.min(Math.max(12, box.left), window.innerWidth - w - 12);
+      floatPop.style.width = w + "px";
+      floatPop.style.left = (left + window.scrollX) + "px";
+      floatPop.style.top = (box.bottom + window.scrollY + 8) + "px";
+      floatPop.classList.toggle("search-pop--two", w >= 520);
+    }
+    function markFloat() {
+      floatPop.querySelectorAll("button").forEach(function (b, i) { b.classList.toggle("is-sel", i === floatSel); b.setAttribute("aria-selected", i === floatSel ? "true" : "false"); });
+    }
+    function showFloat(input) {
+      floatFor = input;
+      if (input.value.trim()) { floatPop.hidden = true; return; }
+      var Soc = window.Social;
+      floatPop.innerHTML = '<p class="search-pop-title">지금 가장 인기있는 콘텐츠</p><ol>' +
+        popularItems(10).map(function (p, i) {
+          var v = Soc ? (Soc.stats(p.it.id).views || 0) : 0;
+          return '<li><button type="button" role="option" data-review="' + esc(p.it.id) + '"><b>' + (i + 1) + "</b>" +
+            '<span class="badge badge--' + SEC_BADGE[p.sec] + '">' + esc(SECTION_LABEL[p.sec]) + "</span>" +
+            '<span class="sp-name">' + esc(p.it.name) + "</span>" +
+            (v ? '<small class="sp-views">조회 ' + v.toLocaleString("ko-KR") + "</small>" : "") + "</button></li>";
+        }).join("") + "</ol>";
+      floatSel = -1; floatPop.hidden = false; placeFloat();
+    }
+    function hideFloat() { floatPop.hidden = true; floatSel = -1; }
+    document.addEventListener("focusin", function (e) {
+      var t = e.target;
+      if (t && (t.id === "heroSearchInput" || t.id === "searchAgainInput")) showFloat(t);
+    });
+    document.addEventListener("input", function (e) { if (e.target === floatFor) showFloat(floatFor); });
+    document.addEventListener("focusout", function (e) { if (e.target === floatFor) setTimeout(hideFloat, 200); });
+    document.addEventListener("keydown", function (e) {
+      if (e.target !== floatFor || floatPop.hidden) return;
+      var btns = floatPop.querySelectorAll("button");
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        floatSel = (floatSel + (e.key === "ArrowDown" ? 1 : -1) + btns.length) % btns.length; markFloat();
+      } else if (e.key === "Enter" && floatSel > -1) {
+        e.preventDefault(); var b = btns[floatSel]; hideFloat(); floatFor.blur(); b.click();
+      } else if (e.key === "Escape") { hideFloat(); }
+    });
+    floatPop.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    floatPop.addEventListener("click", function (e) { if (e.target.closest("[data-review]")) { hideFloat(); if (floatFor) floatFor.blur(); } });
+    window.addEventListener("resize", placeFloat);
+    window.addEventListener("hashchange", hideFloat);
     // 휴대폰: 챗봇 버튼 위에 동그란 "오늘 뭐 먹지" 주사위 버튼 (누르면 뽑기 창)
     var pickFab = document.createElement("button");
     pickFab.type = "button"; pickFab.className = "pick-fab"; pickFab.setAttribute("data-tab-pick", "");
@@ -166,10 +236,14 @@
       e.preventDefault();
       runSearch(document.getElementById("navSearchInput").value);
     });
-    // 사람 아이콘: 내가 저장한 장소(즐겨찾기)
+    // 사람 아이콘: 로그인·내 정보 (js/community.js). 없으면 내가 저장한 장소(즐겨찾기)
     var ub = document.getElementById("userBtn");
-    ub.setAttribute("aria-label", "내 장소 (저장한 곳)"); ub.title = "내 장소";
-    ub.addEventListener("click", function () { go("favorites"); });
+    if (window.Community) {
+      ub.addEventListener("click", function () { window.Community.openAccount(); });
+    } else {
+      ub.setAttribute("aria-label", "내 장소 (저장한 곳)"); ub.title = "내 장소";
+      ub.addEventListener("click", function () { go("favorites"); });
+    }
     document.getElementById("toTop").addEventListener("click", function () { window.scrollTo(0, 0); });
     document.getElementById("socials").addEventListener("click", function (e) {
       var a = e.target.closest("[data-social]");
@@ -296,7 +370,7 @@
                   : "아직 조회 기록이 적어서 추천인 수가 많은 정보를 먼저 보여 줘요.";
   }
   function firstLine(note) {
-    var l = String(note || "").split("\n").filter(function (x) { return x && !/^https?:|^참고|^txt|^전화/.test(x); })[0] || "";
+    var l = String(note || "").split("\n").map(function (x) { return x.replace(/^\s*>\s?/, ""); }).filter(function (x) { return x && !/^https?:|^참고|^txt|^전화/.test(x); })[0] || "";
     return l.length > 40 ? l.slice(0, 38) + "…" : l;
   }
   function popularCardsHTML() {
@@ -488,8 +562,9 @@
       (window.Features ? '<div class="modal-tools">' + Features.openBadgeHTML(it) + Features.favButtonHTML(it.id) + "</div>" : "") +
       (it.location ? '<p class="meta">📍 ' + esc(it.location) + "</p>" : "") +
       (it.price ? '<p class="meta"><b>가격</b> ' + esc(it.price) + "</p>" : "") +
-      (it.note ? '<p class="note">' + linkify(it.note) + "</p>" : "") +
-      (url ? '<a class="map-link" href="' + esc(url) + '" target="_blank" rel="noopener">지도에서 보기 ↗</a>' : "") +
+      (it.note ? '<div class="note">' + noteHTML(it.note) + "</div>" : "") +
+      (place.sec === "food" && window.FoodMap && FoodMap.has(it.id) ? '<a class="map-link" href="#foodmap" data-fm-focus="' + esc(it.id) + '">지도에서 보기 🗺</a>'
+        : url ? '<a class="map-link" href="' + esc(url) + '" target="_blank" rel="noopener">지도에서 보기 ↗</a>' : "") +
       (window.Features && Features.reportAvailable() ? Features.reportHTML(it.id) : "");
     fillForm(); renderModalList();
     if (window.Social) window.Social.recordView(pid);
@@ -526,7 +601,17 @@
     }
   });
   if (window.Social) window.Social.onChange(refreshSocial);
+  // 맛집 목록·상세 창의 "지도에서 보기": 그 가게를 맛집 지도에서 바로 열어요
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest("[data-fm-focus]");
+    if (!a) return;
+    if (modal && modal.el && !modal.el.hidden) closeModal();
+    if (location.hash.indexOf("#foodmap") === 0 && window.FoodMap) { e.preventDefault(); FoodMap.focus(a.dataset.fmFocus); return; }
+    state.fmFocus = a.dataset.fmFocus;
+  });
   window.openPlaceModal = openModal;  // 맛집 지도(js/foodmap.js)에서 핀을 누르면 이 상세 창을 열어요
+  // 맛집 지도의 목록 보기(js/foodmap.js)에서 이 사이트와 같은 카드 모양을 쓰려고 열어 둬요
+  window.placeCardHTML = function (id, idx, open) { var p = PLACE_BY_ID[id]; return p ? itemHTML(p.it, p.sec, idx, open) : ""; };
 
   /* ---------- 목록 화면 (맛집·생활꿀팁·숨은장소·자유) ---------- */
   function uniq(arr) { var o = []; arr.forEach(function (v) { if (v && o.indexOf(v) < 0) o.push(v); }); return o; }
@@ -558,10 +643,11 @@
       '<div class="social-row"><div class="social" data-stat="' + esc(item.id) + '">' + socialHTML(item.id) + "</div>" + (window.Features ? Features.favButtonHTML(item.id) : "") + "</div>" +
       (item.location ? '<p class="meta">📍 ' + esc(item.location) + "</p>" : "") +
       (item.price ? '<p class="meta"><b>가격</b> ' + esc(item.price) + "</p>" : "") +
-      (item.note ? '<p class="note' + (noteLong && !open ? " clamp" : "") + '">' + linkify(item.note) + "</p>" : "") +
+      (item.note ? '<div class="note' + (noteLong && !open ? " clamp" : "") + '">' + noteHTML(item.note) + "</div>" : "") +
       '<div class="item-actions">' +
         (noteLong ? '<button class="text-btn" type="button" data-toggle="' + idx + '">' + (open ? "접기" : "더보기") + "</button>" : "") +
-        (url ? '<a class="map-link" href="' + esc(url) + '" target="_blank" rel="noopener">지도에서 보기 ↗</a>' : "") +
+        (sec === "food" && window.FoodMap && FoodMap.has(item.id) ? '<a class="map-link" href="#foodmap" data-fm-focus="' + esc(item.id) + '">지도에서 보기 🗺</a>'
+          : url ? '<a class="map-link" href="' + esc(url) + '" target="_blank" rel="noopener">지도에서 보기 ↗</a>' : "") +
         (item.checkedAt ? '<small class="views" style="margin-left:auto">확인 ' + esc(item.checkedAt) + "</small>" : "") +
       "</div></article>";
   }
@@ -588,7 +674,9 @@
     }
     return '<div class="wrap sub-page">' +
       '<div class="page-head"><div class="crumb"><a href="#home">홈</a> › ' + esc(info.title) + "</div>" +
-        "<h1>" + esc(info.title) + "</h1><p>" + esc(info.desc) + ' · <span class="count">' + pool.length + "곳</span></p></div>" +
+        '<div class="page-title-row"><h1>' + esc(info.title) + "</h1><div class=\"head-btns\">" +
+          (sec === "food" && window.FoodMap ? '<a class="map-view-btn" href="#foodmap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6z"/><path d="M9 4v14M15 6v14"/></svg><span>지도에서 보기</span></a>' : "") +
+          (window.AddPlace ? AddPlace.buttonHTML(sec) : "") + "</div></div><p>" + esc(info.desc) + ' · <span class="count">' + pool.length + "곳</span></p></div>" +
       '<div class="toolbar">' +
         '<div class="chips" role="group" aria-label="분류">' +
           ["전체"].concat(cats).map(function (c) {
@@ -818,7 +906,7 @@
       '<div class="page-head"><div class="crumb"><a href="#home">홈</a> › 내 장소</div><h1>내 장소</h1>' +
       "<p>☆ 저장을 누른 곳이 모여요. 이 기기의 이 브라우저에만 저장돼요." + (ids.length ? ' · <span class="count">' + ids.length + "곳</span>" : "") + "</p></div>" +
       (ids.length ? '<div class="item-grid">' + ids.map(function (id) { var p = PLACE_BY_ID[id]; return itemHTML(p.it, p.sec, -1, false); }).join("") + "</div>"
-        : '<div class="empty">아직 저장한 곳이 없어요. 맛집·숨은장소·생활꿀팁에서 ☆ 저장을 눌러 보세요.<br><br><a class="pill-btn" href="#food">맛집 보러 가기' + ICON.arrow + "</a></div>") +
+        : '<div class="empty">아직 저장한 곳이 없어요. 맛집·숨은장소·생활꿀팁에서 ☆ 저장을 눌러 보세요.<br><br><a class="pill-btn" href="#foodmap">맛집 보러 가기' + ICON.arrow + "</a></div>") +
       "</div>";
   }
 
@@ -829,18 +917,21 @@
     var html = route === "home" ? homeHTML()
       : route === "map" ? mapHTML()
       : route === "search" ? searchHTML()
-      : route === "community" ? communityHTML()
+      : route === "community" ? (window.Community ? window.Community.html() : communityHTML())  // 커뮤니티: js/community.js
       : route === "notice" ? noticeHTML()
       : route === "events" ? (window.Features ? Features.calendarPageHTML() : eventsHTML())
       : route === "bus" && window.Features ? Features.busPageHTML()
       : route === "favorites" ? favoritesHTML()
-      : route === "food" && window.FoodMap ? FoodMap.html()  // 맛집: 지도 화면 (js/foodmap.js)
+      : route === "foodmap" && window.FoodMap ? FoodMap.html()  // 맛집 지도 화면 (js/foodmap.js) — 맛집 목록의 [지도에서 보기]
+      : route === "foodmap" ? listHTML("food")
       : listHTML(route);
     app.innerHTML = html;
     document.body.setAttribute("data-route", route);
     document.querySelectorAll("[data-nav]").forEach(function (a) {
-      if (a.dataset.nav === route) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+      if (a.dataset.nav === route || (a.dataset.nav === "foodmap" && route === "food") || (a.dataset.nav === "food" && route === "foodmap")) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
     });
+    // 맛집 지도(#foodmap)에서 다른 화면으로 오면 지도용 표시(챗봇 버튼 위치 등)를 풀어 줘요
+    if (route !== "foodmap") document.body.classList.remove("fm-on", "fm-sheet-open");
     bind(route);
     if (keepScroll === true) window.scrollTo(0, y); else window.scrollTo(0, 0);
   }
@@ -863,8 +954,9 @@
           if (st) { st.cat = "전체"; st.sub = "전체"; st.area = "전체"; st.q = ""; }
         });
       });
-    } else if (route === "food" && window.FoodMap) {
+    } else if (route === "foodmap" && window.FoodMap) {
       FoodMap.bind(app);
+      if (state.fmFocus) { FoodMap.focus(state.fmFocus); state.fmFocus = null; }
     } else if (state.list[route]) {
       bindList(route);
     } else if (route === "map") {
@@ -896,6 +988,8 @@
       document.getElementById("searchAgain").addEventListener("submit", function (e) {
         e.preventDefault(); state.query = document.getElementById("searchAgainInput").value.trim(); render(true);
       });
+    } else if (route === "community" && window.Community) {
+      window.Community.bind(app);
     } else if (route === "community") {
       document.getElementById("writeForm").addEventListener("submit", function (e) {
         e.preventDefault();
@@ -910,4 +1004,17 @@
   initChrome();
   window.addEventListener("hashchange", function () { render(); });
   render(true);
+  // 장소 추가 신청에서 관리자가 승인한 곳을 구글 시트에서 받아 목록에 더해요 (js/addplace.js)
+  if (window.AddPlace) AddPlace.load().then(function (by) {
+    if (!by) return;
+    var added = 0;
+    Object.keys(by).forEach(function (sec) {
+      P[sec] = P[sec] || [];
+      by[sec].forEach(function (it) {
+        if (PLACE_BY_ID[it.id]) return;
+        P[sec].push(it); PLACE_BY_ID[it.id] = { sec: sec, it: it }; added++;
+      });
+    });
+    if (added && ["hidden", "tips", "food", "search", "favorites"].indexOf(currentRoute()) > -1) render(true);
+  });
 })();

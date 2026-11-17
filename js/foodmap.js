@@ -4,6 +4,8 @@
      핀을 누르면 수경님 데이터(data/places.js)의 자세한 정보(메모·영업 중·저장·후기)를 보여 줘요.
    - 지도: OpenStreetMap + Leaflet (무료, 키 필요 없음) — 성림님 사이트(knut-guide) 지도 화면을 옮겨 옴
    - 핀 모양: 음식점 / 카페 / 술집을 아이콘과 색으로 구별
+   - 검색창 옆 [지도|목록] 스위치: 목록은 같은 가게·같은 필터를 수경님 카드 모양으로 보여 줌
+   - 핀 묶기: Leaflet.markercluster (넓게 보면 숫자 동그라미)
    - 아래 탭: 지도 · 메뉴(음식 종류로 찾기) · 뭐 먹지(조건 고르고 한 곳 뽑기)
    app.js가 '맛집' 화면을 그릴 때 FoodMap.html()과 FoodMap.bind()를 불러요.
    ============================================================= */
@@ -29,7 +31,8 @@
   var PANELS = ["fmList", "fmDetail", "fmMenu", "fmRoulette"];
 
   // 화면을 다시 그려도 기억하는 값
-  var st = { type: "all", zone: "all", kind: "all", solo: false, q: "", panel: null, selected: null };
+  var st = { type: "all", zone: "all", kind: "all", solo: false, q: "", panel: null, selected: null,
+    view: "map", lvSort: "rec", lvOpen: {} };  // view: 지도(map) / 목록(list). 맛집에 들어올 때마다 지도부터
   var map = null, layer = null, markers = {}, me = null, meMarker = null, meCircle = null, watchId = null, firstFix = false;
   var root = null;
 
@@ -90,7 +93,7 @@
       if (st.kind !== "all" && p.kind !== st.kind) return false;
       if (st.solo && p.solo !== "O") return false;
       if (!q) return true;
-      return [p.name, p.kind, p.desc, p.tags, p.address, p.where].join(" ").toLowerCase().indexOf(q) > -1;
+      return [p.name, p.kind, p.desc, p.tip, p.tags, p.address, p.where].join(" ").toLowerCase().indexOf(q) > -1;
     }).sort(function (a, b) {
       if (me) {
         var da = distance(a), db = distance(b);
@@ -113,7 +116,7 @@
   };
   function html() {
     var count = function (t) { return data.filter(function (p) { return t === "all" || p.type === t; }).length; };
-    return '<section class="fm" id="fm" aria-label="맛집 지도">' +
+    return '<section class="fm' + (st.view === "list" ? " is-list" : "") + '" id="fm" aria-label="맛집 지도">' +
       '<div class="fm-map" id="fmMap"></div>' +
       '<div class="fm-top" id="fmTop">' +
         '<div class="fm-search-row">' +
@@ -122,6 +125,10 @@
             '<span class="sr-only">가게 이름, 메뉴로 찾기</span>' +
             '<input id="fmQ" type="search" placeholder="가게 이름, 메뉴로 찾기" autocomplete="off" value="' + esc(st.q) + '">' +
           "</label>" +
+          '<div class="fm-view-seg" role="group" aria-label="보기 방식">' +
+            '<button type="button" data-fm-view="map" aria-pressed="' + (st.view === "map") + '">' + TAB_ICON.map + "<span>지도</span></button>" +
+            '<button type="button" data-fm-view="list" aria-pressed="' + (st.view === "list") + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1.2" fill="currentColor"/><circle cx="4" cy="12" r="1.2" fill="currentColor"/><circle cx="4" cy="18" r="1.2" fill="currentColor"/></svg><span>목록</span></button>' +
+          "</div>" +
         "</div>" +
         '<div class="fm-chips" role="group" aria-label="가게 종류">' +
           '<button type="button" class="chip fm-kind-chip" id="fmKindChip" hidden></button>' +
@@ -135,6 +142,16 @@
         '<div class="fm-chips fm-zones" role="group" aria-label="구역">' +
           ZONES.map(function (z) { return chip("zone", z[0], z[1], st.zone); }).join("") +
         "</div>" +
+      "</div>" +
+      // 목록 보기: 수경님 사이트와 같은 카드 모양 (지도와 같은 가게·같은 필터)
+      '<div class="fm-listview" id="fmListView">' +
+        '<div class="fm-lv-head"><span id="fmLvCount"></span>' +
+          '<label class="sr-only" for="fmLvSort">정렬</label><select class="select" id="fmLvSort">' +
+            [["rec", "추천 많은 순"], ["near", "가까운 순 (내 위치)"], ["price", "싼 순"], ["name", "이름순"]].map(function (o) {
+              return '<option value="' + o[0] + '"' + (st.lvSort === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
+            }).join("") +
+          "</select></div>" +
+        '<div class="item-grid" id="fmLvGrid"></div>' +
       "</div>" +
       // 오른쪽 세로 버튼 (아래는 챗봇 자리)
       '<div class="fm-fabs">' +
@@ -181,7 +198,7 @@
 
   /* ---------- 그리기 ---------- */
   function draw() {
-    var list = visible();
+    var list = visible(), batch = [];
     layer.clearLayers();
     markers = {};
     list.forEach(function (p) {
@@ -189,9 +206,10 @@
       var sel = st.selected === p.id;
       markers[p.id] = L.marker(p.pos, { icon: pinIcon(p, sel), riseOnHover: true, title: p.name, zIndexOffset: sel ? 1000 : 0 })
         .bindTooltip(esc(p.name), { direction: "top", offset: [0, -38], className: "fm-tip" })
-        .on("click", function (e) { L.DomEvent.stopPropagation(e); openDetail(p.id, false); })
-        .addTo(layer);
+        .on("click", function (e) { L.DomEvent.stopPropagation(e); openDetail(p.id, false); });
+      batch.push(markers[p.id]);
     });
+    if (layer.addLayers) layer.addLayers(batch); else batch.forEach(function (m) { m.addTo(layer); });
     var onMap = list.filter(function (p) { return p.pos; }).length;
     $("#fmCount").textContent = list.length;
     $("#fmSummary").textContent = list.length + "곳 · " + (me ? "가까운 순" : "추천 많은 순") + (onMap < list.length ? " · 지도에 없는 곳 " + (list.length - onMap) : "");
@@ -209,6 +227,31 @@
     var kc = $("#fmKindChip");
     kc.hidden = st.kind === "all";
     kc.textContent = st.kind === "all" ? "" : (KIND_EMOJI[st.kind] || "") + " " + st.kind + " ✕";
+    if (st.view === "list") drawListView(list);
+  }
+
+  /* ---------- 목록 보기 ---------- */
+  function drawListView(list) {
+    var L2 = list.slice();  // visible()은 내 위치가 켜져 있으면 가까운 순, 아니면 추천 많은 순
+    if (st.lvSort === "price") L2.sort(function (a, b) { return (typeof a.price === "number" ? a.price : 1e9) - (typeof b.price === "number" ? b.price : 1e9) || b.rec - a.rec; });
+    else if (st.lvSort === "name") L2.sort(function (a, b) { return a.name.localeCompare(b.name, "ko"); });
+    else if (st.lvSort === "rec" && me) L2.sort(function (a, b) { return b.rec - a.rec || a.name.localeCompare(b.name, "ko"); });
+    $("#fmLvCount").innerHTML = '<b class="count">' + L2.length + "곳</b>" +
+      (st.lvSort === "near" && !me ? ' · <span class="fm-lv-hint">가까운 순은 지도에서 ‘내 위치’를 켜면 돼요</span>' : "");
+    $("#fmLvGrid").innerHTML = L2.length ? L2.map(function (p) {
+      var card = window.placeCardHTML && p.skId ? window.placeCardHTML(p.skId, p.id, !!st.lvOpen[p.id]) : "";
+      if (!card) return "";
+      // 카드 아래 줄에 '이 지도에서 위치 보기' 버튼을 더한다
+      return card.replace('<div class="item-actions">', '<div class="item-actions"><button type="button" class="text-btn fm-show" data-fm-show="' + p.id + '">📍 위치 보기</button>');
+    }).join("") : '<div class="empty">조건에 맞는 가게가 없어요. 필터를 바꿔 보세요.</div>';
+  }
+  function setView(v) {
+    st.view = v;
+    $("#fm").classList.toggle("is-list", v === "list");
+    root.querySelectorAll("[data-fm-view]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.fmView === v)); });
+    if (st.panel) { if (st.panel === "fmDetail") closeDetail(); else panel(null); }
+    draw();
+    if (v === "map") map.invalidateSize(); else $("#fmListView").scrollTop = 0;
   }
 
   function panel(id) { // 아래(옆) 창은 한 번에 하나만
@@ -222,6 +265,7 @@
 
   /* ---------- 가게 정보 ---------- */
   function openDetail(id, fly) {
+    if (st.view === "list") setView("map");
     var p = data[id], t = TYPES[p.type] || TYPES.food;
     var prev = st.selected;
     st.selected = id;
@@ -266,7 +310,7 @@
       ["내 위치에서", me && p.pos ? distText(distance(p)) + " (직선거리)" : ""],
       ["확인한 날", it.checkedAt || p.date]
     ].filter(function (r) { return r[1]; });
-    var notes = (it.note || "").split("\n").filter(function (l) { return l.trim(); });
+    var notes = (it.note || "").split("\n").map(function (l) { return l.replace(/^\s*>\s?/, ""); }).filter(function (l) { return l.trim(); });
     if (!notes.length && p.desc && p.desc !== "-") notes = [p.desc];
     var off = function (label) { return '<span class="fm-btn is-off">' + label + "</span>"; };
     return '<div class="fm-grab" aria-hidden="true"></div>' +
@@ -280,6 +324,8 @@
         (rv && rv.n ? '<span class="fm-badge fm-badge--star">★ ' + rv.avg.toFixed(1) + " · 후기 " + rv.n + "</span>" : "") +
       "</div>" +
       '<dl class="fm-rows">' + rows.map(function (r) { return "<div><dt>" + r[0] + "</dt><dd>" + esc(r[1]) + "</dd></div>"; }).join("") + "</dl>" +
+      // 참고: 대기·예약처럼 꼭 알아야 할 한 줄 (data/foodmap.js의 tip)
+      (p.tip ? '<div class="fm-caution"><b>⚠️ 참고</b><span>' + esc(p.tip) + "</span></div>" : "") +
       (notes.length ? '<div class="fm-memo"><b>선배들의 메모</b><ul>' + notes.map(function (l) { return "<li>" + linkify(l) + "</li>"; }).join("") + "</ul></div>" : "") +
       '<div class="fm-actions">' +
         (url ? '<a class="fm-btn fm-btn--main" href="' + esc(url) + '" target="_blank" rel="noopener">🗺 ' + (/kakao/.test(url) ? "카카오맵" : "네이버 지도") + "에서 보기</a>" : off("🗺 지도 링크 없음")) +
@@ -351,7 +397,8 @@
   }
 
   /* ---------- 오늘 뭐 먹지? (조건 고르고 한 곳 뽑기) ---------- */
-  var pk = { kind: "all", zone: "대학로", solo: false, cheap: false, open: false, cur: null, rolling: false };
+  // 종류·위치는 여러 개 고를 수 있어요 (빈 목록 = 전체). 조건은 켜고 끄기.
+  var pk = { kinds: [], zones: ["대학로"], solo: false, cheap: false, open: false, cur: null, rolling: false };
   var PK_CONDS = [["solo", "혼밥 가능"], ["cheap", "1만 원 이하"], ["open", "지금 영업 중 <small>(시간 정보 있는 곳)</small>"]];
   function isOpenNow(p) {
     var it = skItem(p), F = window.Features;
@@ -361,7 +408,7 @@
   }
   function pickPool() {
     return data.filter(function (p) {
-      return (pk.kind === "all" || p.kind === pk.kind) && (pk.zone === "all" || p.zone === pk.zone) &&
+      return (!pk.kinds.length || pk.kinds.indexOf(p.kind) > -1) && (!pk.zones.length || pk.zones.indexOf(p.zone) > -1) &&
         (!pk.solo || p.solo === "O") && (!pk.cheap || (typeof p.price === "number" && p.price <= 10000)) && (!pk.open || isOpenNow(p));
     });
   }
@@ -369,8 +416,12 @@
     return '<button type="button" class="chip" data-fm-pk="' + key + '" data-val="' + esc(val) + '" aria-pressed="' + on + '">' + label + "</button>";
   }
   function renderPick() {
-    $("#fmPKinds").innerHTML = ["all"].concat(KINDS).map(function (k) { return pkChip("kind", k, k === "all" ? "전체" : esc(k), pk.kind === k); }).join("");
-    $("#fmPZones").innerHTML = ZONES.map(function (z) { return pkChip("zone", z[0], z[1], pk.zone === z[0]); }).join("");
+    $("#fmPKinds").innerHTML = ["all"].concat(KINDS).map(function (k) {
+      return pkChip("kinds", k, k === "all" ? "전체" : esc(k), k === "all" ? !pk.kinds.length : pk.kinds.indexOf(k) > -1);
+    }).join("");
+    $("#fmPZones").innerHTML = ZONES.map(function (z) {
+      return pkChip("zones", z[0], z[1], z[0] === "all" ? !pk.zones.length : pk.zones.indexOf(z[0]) > -1);
+    }).join("");
     $("#fmPConds").innerHTML = PK_CONDS.map(function (c) { return pkChip(c[0], "toggle", c[1], pk[c[0]]); }).join("");
     var n = pickPool().length;
     $("#fmPCount").textContent = "후보 " + n + "곳";
@@ -475,7 +526,14 @@
       }).addTo(map);
       L.marker(CAMPUS, { interactive: false, keyboard: false,
         icon: L.divIcon({ className: "", iconSize: null, html: '<div class="fm-campus">🎓 교통대</div>' }) }).addTo(map);
-      layer = L.layerGroup().addTo(map);
+      // 핀 묶기: 넓게 보면 가까운 핀을 숫자 동그라미로 묶고, 17단계 이상 확대하면 모두 풀어요
+      layer = (L.markerClusterGroup ? L.markerClusterGroup({
+        maxClusterRadius: 48, disableClusteringAtZoom: 17, spiderfyOnMaxZoom: false, showCoverageOnHover: false,
+        iconCreateFunction: function (cl) {
+          var n = cl.getChildCount(), sz = n < 10 ? 36 : n < 30 ? 42 : 50;
+          return L.divIcon({ className: "", iconSize: [sz, sz], html: '<div class="fm-cluster" style="width:' + sz + "px;height:" + sz + 'px">' + n + "</div>" });
+        }
+      }) : L.layerGroup()).addTo(map);
       map.on("click", closeDetail);
     }
     map.invalidateSize();
@@ -487,6 +545,13 @@
     else panel(st.panel);
 
     $("#fm").addEventListener("click", function (e) {
+      var vb = e.target.closest("[data-fm-view]");
+      // [목록]을 누르면 생활꿀팁·숨은장소와 같은 맛집 목록 화면(#food)으로 가요
+      if (vb) { if (vb.dataset.fmView === "list") { location.hash = "#food"; return; } if (vb.dataset.fmView !== st.view) setView(vb.dataset.fmView); return; }
+      var shw = e.target.closest("[data-fm-show]");
+      if (shw) { openDetail(+shw.dataset.fmShow, true); return; }
+      var tg = e.target.closest("#fmLvGrid [data-toggle]");
+      if (tg) { st.lvOpen[tg.dataset.toggle] = !st.lvOpen[tg.dataset.toggle]; draw(); return; }  // 카드 메모 더보기·접기
       var c = e.target.closest("[data-fm-close]");
       if (c) { if (st.panel === "fmDetail") closeDetail(); else panel(null); return; }
       var tab = e.target.closest("[data-fm-tab]");
@@ -495,7 +560,7 @@
         closeDetail();
         if (tb === "menu") { renderFoodGrid(); panel(st.panel === "fmMenu" ? null : "fmMenu"); }
         else if (tb === "roulette") { renderPick(); panel(st.panel === "fmRoulette" ? null : "fmRoulette"); }
-        else panel(null);
+        else { panel(null); if (st.view === "list") setView("map"); }
         return;
       }
       var rvb = e.target.closest("[data-fm-review]");
@@ -514,7 +579,13 @@
       var pc = e.target.closest("[data-fm-pk]");
       if (pc && !pk.rolling) {
         var pkey = pc.dataset.fmPk;
-        if (pc.dataset.val === "toggle") pk[pkey] = !pk[pkey]; else pk[pkey] = pc.dataset.val;
+        var pv = pc.dataset.val;
+        if (pv === "toggle") pk[pkey] = !pk[pkey];
+        else if (pv === "all") pk[pkey] = [];  // '전체' = 고른 것 모두 풀기
+        else { // 여러 개 고르기: 누를 때마다 넣었다 뺐다
+          var at = pk[pkey].indexOf(pv);
+          if (at > -1) pk[pkey].splice(at, 1); else pk[pkey].push(pv);
+        }
         pk.cur = null; renderPick(); return;
       }
       if (e.target.closest("#fmPGo, #fmPAgain")) { pickOne(); return; }
@@ -532,6 +603,7 @@
     });
     $("#fmQ").addEventListener("input", function (e) { st.q = e.target.value; closeDetail(); draw(); });
     $("#fmQ").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.target.blur(); closeDetail(); panel("fmList"); } });
+    $("#fmLvSort").addEventListener("change", function (e) { st.lvSort = e.target.value; draw(); });
     $("#fmListBtn").addEventListener("click", function () { closeDetail(); panel(st.panel === "fmList" ? null : "fmList"); });
     $("#fmLocate").addEventListener("click", locate);
     if (watchId != null) $("#fmLocate").classList.add("is-on");
@@ -541,8 +613,9 @@
 
   window.addEventListener("resize", fit);
   window.addEventListener("hashchange", function () {
-    if (location.hash === "#food") return;
+    if (location.hash.indexOf("#foodmap") === 0) return;
     document.body.classList.remove("fm-on", "fm-sheet-open");
+    st.view = "map";
     if (watchId != null) stopLocate();
     if (map) map.stop();
   });
@@ -550,5 +623,22 @@
     if (e.key === "Escape" && map && document.body.contains(mapEl) && st.panel) { if (st.panel === "fmDetail") closeDetail(); else panel(null); }
   });
 
-  window.FoodMap = { html: html, bind: bind, count: data.length };
+  // 맛집 목록의 "지도에서 보기": 수경님 데이터 id(places.js)로 그 가게를 찾아 지도에서 열어요
+  function focus(skId) {
+    if (!map) return;
+    for (var i = 0; i < data.length; i++) {
+      if (data[i].skId === skId) {
+        st.type = "all"; st.zone = "all"; st.kind = "all"; st.solo = false; st.q = "";
+        if (root) {
+          var q = root.querySelector("#fmQ"); if (q) q.value = "";
+          root.querySelectorAll("[data-fm]").forEach(function (b) {
+            var k = b.dataset.fm; b.setAttribute("aria-pressed", String(k === "solo" ? false : b.dataset.val === "all"));
+          });
+        }
+        draw(); openDetail(data[i].id, true); return;
+      }
+    }
+  }
+  function has(skId) { return data.some(function (p) { return p.skId === skId; }); }
+  window.FoodMap = { html: html, bind: bind, focus: focus, has: has, count: data.length };
 })();
